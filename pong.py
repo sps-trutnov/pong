@@ -8,6 +8,7 @@ import pygame
 import sys
 # importovani vsech soucasti pygame.locals
 from pygame.locals import *
+from pygame.event import *
 
 ################################################################################
 # Parametry aplikace
@@ -25,19 +26,47 @@ vyska_palky = 75
 pozice_x_palky = 30
 pozice_y_palky = rozliseni_okna[1] / 2
 
+pohyb_palkou_nahoru = False
+pohyb_palkou_dolu = False
+
+rychlost_posunu_palky = 1
+
 ################################################################################
 # Pomocne podprogramy
 ################################################################################
 
 def zpracovani_udalosti():
+    global pohyb_palkou_dolu, pohyb_palkou_nahoru
+    
     # prochazeni vsech udalosti, na ktere se da reagovat
-    for event in pygame.event.get():
-        # pokud je nalezena udalost typu QUIT...
-        if event.type == QUIT:
+    for udalost in pygame.event.get():
+        
+        # pokud je nalezena udalost zavreni okna...
+        if udalost.type == pygame.QUIT:
             # okno se zavre
             pygame.quit()
             # aplikace skonci
             sys.exit()
+        
+        # pokud je nalezena udalost stisku klavesy...
+        if udalost.type == pygame.KEYDOWN:
+            # pokud jde o sipku nahoru...
+            if udalost.key == pygame.K_UP:
+                pohyb_palkou_nahoru = True
+            
+            # pokud jde o sipku dolu...
+            if udalost.key == pygame.K_DOWN:
+                pohyb_palkou_dolu = True
+
+        # pokud je nalezena udalost pusteniklavesy...
+        if udalost.type == pygame.KEYUP:
+            # pokud jde o sipku nahoru...
+            if udalost.key == pygame.K_UP:
+                pohyb_palkou_nahoru = False
+            
+            # pokud jde o sipku dolu...
+            if udalost.key == pygame.K_DOWN:
+                pohyb_palkou_dolu = False
 
 def vykreslovaci_operace():
     # vyplneni okna barvou (pozadi)
@@ -46,6 +75,24 @@ def vykreslovaci_operace():
     x = pozice_x_palky - sirka_palky / 2
     y = pozice_y_palky - vyska_palky / 2
     pygame.draw.rect(okno, barva_palky, (x, y, sirka_palky, vyska_palky))
+    
+def pohyb_palky():
+    global pozice_y_palky
+
+    if pohyb_palkou_dolu:
+        pozice_y_palky += rychlost_posunu_palky
+    
+    if pohyb_palkou_nahoru:
+        pozice_y_palky -= rychlost_posunu_palky
+    
+    if pozice_y_palky - vyska_palky / 2 < 0:
+        pozice_y_palky = vyska_palky / 2
+    
+    if pozice_y_palky + vyska_palky / 2 > rozliseni_okna[1]:
+        pozice_y_palky = rozliseni_okna[1] - vyska_palky / 2
+    
+def pohyb_micku():
+    pass
     
 ################################################################################
 # Inicializace
@@ -64,6 +111,8 @@ pygame.display.set_caption(titulek_okna)
 
 while True:
     zpracovani_udalosti()
+    pohyb_palky()
+    pohyb_micku()
     vykreslovaci_operace()
 
     # prekresleni okna
