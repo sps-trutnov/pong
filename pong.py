@@ -29,13 +29,14 @@ pozice_y_palky = rozliseni_okna[1] / 2
 pohyb_palkou_nahoru = False
 pohyb_palkou_dolu = False
 
-rychlost_posunu_palky = 1
+rychlost_posunu_palky = 0.5
 
 ################################################################################
 # Pomocne podprogramy
 ################################################################################
 
 def zpracovani_udalosti():
+    # podprogram pouziva promenne definovane vyse
     global pohyb_palkou_dolu, pohyb_palkou_nahoru
     
     # prochazeni vsech udalosti, na ktere se da reagovat
@@ -53,17 +54,22 @@ def zpracovani_udalosti():
             # pokud jde o sipku nahoru...
             if udalost.key == pygame.K_UP:
                 pohyb_palkou_nahoru = True
-            
             # pokud jde o sipku dolu...
             if udalost.key == pygame.K_DOWN:
                 pohyb_palkou_dolu = True
-
-        # pokud je nalezena udalost pusteniklavesy...
+            
+            # pokud jde o klavesu Escape...
+            if udalost.key == pygame.K_ESCAPE:
+                # okno se zavre
+                pygame.quit()
+                # aplikace skonci
+                sys.exit()
+                
+        # pokud je nalezena udalost pusteni klavesy...
         if udalost.type == pygame.KEYUP:
             # pokud jde o sipku nahoru...
             if udalost.key == pygame.K_UP:
                 pohyb_palkou_nahoru = False
-            
             # pokud jde o sipku dolu...
             if udalost.key == pygame.K_DOWN:
                 pohyb_palkou_dolu = False
@@ -71,27 +77,44 @@ def zpracovani_udalosti():
 def vykreslovaci_operace():
     # vyplneni okna barvou (pozadi)
     okno.fill(barva_pozadi)
+    
     # vykresleni palky
     x = pozice_x_palky - sirka_palky / 2
     y = pozice_y_palky - vyska_palky / 2
     pygame.draw.rect(okno, barva_palky, (x, y, sirka_palky, vyska_palky))
     
 def pohyb_palky():
+    # pouziva promennou definovanou vyse
     global pozice_y_palky
 
+    # pokud byl detekovan pohyb palkou dolu...
     if pohyb_palkou_dolu:
+        # ...posune se palka smerem od horniho okraje
         pozice_y_palky += rychlost_posunu_palky
     
+    # pokud byl detekovan pohyb palkou nahoru...
     if pohyb_palkou_nahoru:
+        # ...posune se palka smerem k hornimu okraji
         pozice_y_palky -= rychlost_posunu_palky
     
-    if pozice_y_palky - vyska_palky / 2 < 0:
+    # vypocty kolizi palky s okraji okna
+    horni_okraj_okna = 0
+    spodni_okraj_okna = rozliseni_okna[1]
+    horni_okraj_palky = pozice_y_palky - vyska_palky / 2
+    spodni_okraj_palky = pozice_y_palky + vyska_palky / 2
+    
+    # pokud horni okraj palky presahuje horni okraj okna...
+    if horni_okraj_palky < horni_okraj_okna:
+        # ...presune se palka tak, aby se hornim okrajem dotykala okraje okna
         pozice_y_palky = vyska_palky / 2
     
-    if pozice_y_palky + vyska_palky / 2 > rozliseni_okna[1]:
+    # pokud spodni okraj palky presahuje spodni okraj okna...
+    if spodni_okraj_palky > spodni_okraj_okna:
+        # ...presune se palka tak, aby se spodnim okrajem dotykala okraje okna
         pozice_y_palky = rozliseni_okna[1] - vyska_palky / 2
     
 def pohyb_micku():
+    # placeholder pro pozdejsi doplneni
     pass
     
 ################################################################################
@@ -110,6 +133,7 @@ pygame.display.set_caption(titulek_okna)
 ################################################################################
 
 while True:
+    # spusteni pomocnych podprogramu
     zpracovani_udalosti()
     pohyb_palky()
     pohyb_micku()
@@ -117,3 +141,4 @@ while True:
 
     # prekresleni okna
     pygame.display.update()
+    
