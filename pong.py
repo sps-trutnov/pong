@@ -29,6 +29,9 @@ pozice_y_palky = rozliseni_okna[1] / 2
 pohyb_palkou_nahoru = False
 pohyb_palkou_dolu = False
 
+pohyb_palkou_doprava = False
+pohyb_palkou_doleva = False
+
 rychlost_posunu_palky = 0.5
 
 ################################################################################
@@ -38,6 +41,7 @@ rychlost_posunu_palky = 0.5
 def zpracovani_udalosti():
     # podprogram pouziva promenne definovane vyse
     global pohyb_palkou_dolu, pohyb_palkou_nahoru
+    global pohyb_palkou_doleva, pohyb_palkou_doprava
     
     # prochazeni vsech udalosti, na ktere se da reagovat
     for udalost in pygame.event.get():
@@ -57,6 +61,10 @@ def zpracovani_udalosti():
             # pokud jde o sipku dolu...
             if udalost.key == pygame.K_DOWN:
                 pohyb_palkou_dolu = True
+            if udalost.key == pygame.K_LEFT:
+                pohyb_palkou_doleva = True
+            if udalost.key == pygame.K_RIGHT:
+                pohyb_palkou_doprava = True
             
             # pokud jde o klavesu Escape...
             if udalost.key == pygame.K_ESCAPE:
@@ -73,6 +81,10 @@ def zpracovani_udalosti():
             # pokud jde o sipku dolu...
             if udalost.key == pygame.K_DOWN:
                 pohyb_palkou_dolu = False
+            if udalost.key == pygame.K_LEFT:
+                pohyb_palkou_doleva = False
+            if udalost.key == pygame.K_RIGHT:
+                pohyb_palkou_doprava = False
 
 def vykreslovaci_operace():
     # vyplneni okna barvou (pozadi)
@@ -85,7 +97,7 @@ def vykreslovaci_operace():
     
 def pohyb_palky():
     # pouziva promennou definovanou vyse
-    global pozice_y_palky
+    global pozice_y_palky, pozice_x_palky
 
     # pokud byl detekovan pohyb palkou dolu...
     if pohyb_palkou_dolu:
@@ -96,6 +108,12 @@ def pohyb_palky():
     if pohyb_palkou_nahoru:
         # ...posune se palka smerem k hornimu okraji
         pozice_y_palky -= rychlost_posunu_palky
+    
+    if pohyb_palkou_doprava:
+        pozice_x_palky += rychlost_posunu_palky
+    
+    if pohyb_palkou_doleva:
+        pozice_x_palky -= rychlost_posunu_palky
     
     # vypocty kolizi palky s okraji okna
     horni_okraj_okna = 0
@@ -112,6 +130,17 @@ def pohyb_palky():
     if spodni_okraj_palky > spodni_okraj_okna:
         # ...presune se palka tak, aby se spodnim okrajem dotykala okraje okna
         pozice_y_palky = rozliseni_okna[1] - vyska_palky / 2
+    
+    levy_okraj_okna = 0
+    pravy_okraj_okna = rozliseni_okna[0]
+    levy_okraj_palky = pozice_x_palky - sirka_palky / 2
+    pravy_okraj_palky = pozice_x_palky + sirka_palky / 2
+    
+    if levy_okraj_palky < levy_okraj_okna:
+        pozice_x_palky = levy_okraj_okna + sirka_palky / 2
+    
+    if pravy_okraj_palky > pravy_okraj_okna:
+        pozice_x_palky = pravy_okraj_okna - sirka_palky / 2
     
 def pohyb_micku():
     # placeholder pro pozdejsi doplneni
