@@ -20,6 +20,25 @@ class Okno:
         self.rozliseni = rozliseni
         self.barva_pozadi = barva_pozadi
         self.displej = None
+    
+    def vyhodnotit_reakce(self, udalosti):
+        # prochazeni vsech udalosti, na ktere muze okno reagovat
+        for udalost in pygame.event.get():
+            # pokud je nalezena udalost typu zavreni okna...
+            if udalost.type == pygame.QUIT:
+                # okno se zavre
+                pygame.quit()
+                # aplikace skonci
+                sys.exit()
+            
+            # pokud je nalezena udalost typu stisk klavesy...
+            if udalost.type == pygame.KEYDOWN:
+                # a pokud jde o klavesu Escape...
+                if udalost.key == pygame.K_ESCAPE:
+                    # okno se zavre
+                    pygame.quit()
+                    # aplikace skonci
+                    sys.exit()
 
 ################################################################################
 # Objektova reprezentace hracovy palky
@@ -48,14 +67,17 @@ class Palka:
         self.pohyb_nahoru = False
         self.pohyb_dolu = False
     
-    def vyhodnotit_pohyb(self, udalosti):
+    def vyhodnotit_reakce(self, udalosti):
         # zpracovani udalosti
         for udalost in udalosti:
+            # udalosti typu stisk klavesy
             if udalost.type == pygame.KEYDOWN:
                 if udalost.key == self.klavesa_nahoru:
                     self.pohyb_nahoru = True
                 if udalost.key == self.klavesa_dolu:
                     self.pohyb_dolu = True
+            
+            # udalosti typu pusteni klavesy
             if udalost.type == pygame.KEYUP:
                 if udalost.key == self.klavesa_nahoru:
                     self.pohyb_nahoru = False
@@ -153,8 +175,13 @@ rychlost_palky = 0.5
 offset_palky = 30
 
 # vytvoreni palek
-palka1 = Palka(okno, offset_palky, okno.rozliseni[1] / 2, sirka_palky, vyska_palky, barva_palky, rychlost_palky, pygame.K_w, pygame.K_s)
-palka2 = Palka(okno, okno.rozliseni[0] - offset_palky - sirka_palky, okno.rozliseni[1] / 2, sirka_palky, vyska_palky, barva_palky, rychlost_palky, pygame.K_UP, pygame.K_DOWN)
+palky = []
+palky.append(Palka(okno, offset_palky, okno.rozliseni[1] / 2, sirka_palky, vyska_palky, barva_palky, rychlost_palky, pygame.K_w, pygame.K_s))
+palky.append(Palka(okno, okno.rozliseni[0] - offset_palky - sirka_palky, okno.rozliseni[1] / 2, sirka_palky, vyska_palky, barva_palky, rychlost_palky, pygame.K_UP, pygame.K_DOWN))
+
+# vytvoreni micku
+micky = []
+# TO DO
 
 ################################################################################
 # Pomocne podprogramy
@@ -162,54 +189,46 @@ palka2 = Palka(okno, okno.rozliseni[0] - offset_palky - sirka_palky, okno.rozlis
 
 def zpracovani_udalosti():
     # pouziva promenne definovane vyse
-    global palka1, palka2
+    global okno, palky
     
     # seznam udalosti, na ktere lze reagovat
     udalosti = pygame.event.get()
     
-    # palky si svoje reakce na udalosti vyhodnocuji samy
-    palka1.vyhodnotit_pohyb(udalosti)
-    palka2.vyhodnotit_pohyb(udalosti)
+    # nejdrive zpracuje mozne reakce okno
+    okno.vyhodnotit_reakce(udalosti)
     
-    # prochazeni vsech udalosti, na ktere se da reagovat
-    for udalost in pygame.event.get():
-        # pokud je nalezena udalost zavreni okna...
-        if udalost.type == pygame.QUIT:
-            # okno se zavre
-            pygame.quit()
-            # aplikace skonci
-            sys.exit()
-
-        if udalost.type == pygame.KEYDOWN:
-            # pokud jde o klavesu Escape...
-            if udalost.key == pygame.K_ESCAPE:
-                # okno se zavre
-                pygame.quit()
-                # aplikace skonci
-                sys.exit()
+    # kazda palka si svoji reakci vyhodnoti sama
+    for palka in palky:
+        palka.vyhodnotit_reakce(udalosti)
 
 def vykreslovaci_operace():
     # pouziva promenne definovane vyse
-    global okno, palka1, palka2
+    global okno, palky, micky
     
-    # vyplneni okna barvou (pozadi)
+    # vyplneni okna barvou pozadi
     okno.displej.fill(okno.barva_pozadi)
     
     # vykresleni palek
-    palka1.vykreslit(okno.displej)
-    palka2.vykreslit(okno.displej)
+    for palka in palky:
+        palka.vykreslit(okno.displej)
     
-def pohyb_palek():
+    # vykresleni micku
+    for micek in micky:
+        # TO DO
+        pass
+    
+def pohyb_objektu():
     # pouziva promenne definovane vyse
-    global palka1, palka2
+    global palky, micky
 
-    # posun palek
-    palka1.pohnout()
-    palka2.pohnout()
+    # kazda palka si svuj pohyb vyhodnoti sama
+    for palka in palky:
+        palka.pohnout()
     
-def pohyb_micku():
-    # placeholder pro pozdejsi doplneni
-    pass
+    # kazdy micek si svuj pohyb vyhodnoti sam
+    for micek in micky:
+        # TO DO
+        pass
     
 ################################################################################
 # Nekonecna vykreslovaci smycka
@@ -218,8 +237,7 @@ def pohyb_micku():
 while True:
     # spusteni pomocnych podprogramu
     zpracovani_udalosti()
-    pohyb_palek()
-    pohyb_micku()
+    pohyb_objektu()
     vykreslovaci_operace()
 
     # prekresleni okna
