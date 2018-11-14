@@ -11,6 +11,46 @@ from pygame.locals import *
 from pygame.event import *
 
 ################################################################################
+# Objektovy model aplikace
+################################################################################
+
+class Palka:
+    def __init__(self, x, y, w, h, b = (0, 0, 0)):
+        self.pozice_x = x
+        self.pozice_y = y
+        self.sirka = w
+        self.vyska = h
+        self.barva = b
+        
+        o = {'x': x - w / 2 , 'y': y - (h - w) / 2, 'w': w, 'h': h - w}
+        e1 = {'x': x - w / 2, 'y': y - h / 2, 'w': w, 'h': w}
+        e2 = {'x': x - w / 2, 'y': y + h / 2 - w, 'w': w, 'h': w}
+        
+        self.tvary = {'obdelnik': o, 'horni_elipsa': e1, 'spodni_elipsa': e2}
+    
+    def vykreslit(self, cil):
+        barva = self.barva
+        
+        x = self.tvary['obdelnik']['x']
+        y = self.tvary['obdelnik']['y']
+        w = self.tvary['obdelnik']['w']
+        h = self.tvary['obdelnik']['h']
+        pygame.draw.rect(cil, barva, (x, y, w, h))
+        
+        x = self.tvary['horni_elipsa']['x']
+        y = self.tvary['horni_elipsa']['y']
+        w = self.tvary['horni_elipsa']['w']
+        h = self.tvary['horni_elipsa']['h']
+        pygame.draw.ellipse(cil, barva, (x, y, w, h))
+        
+        x = self.tvary['spodni_elipsa']['x']
+        y = self.tvary['spodni_elipsa']['y']
+        w = self.tvary['spodni_elipsa']['w']
+        h = self.tvary['spodni_elipsa']['h']
+        pygame.draw.ellipse(cil, barva, (x, y, w, h))
+        
+
+################################################################################
 # Parametry aplikace
 ################################################################################
 
@@ -157,6 +197,8 @@ okno = pygame.display.set_mode(rozliseni_okna)
 # nastaveni titulku okna
 pygame.display.set_caption(titulek_okna)
 
+palka = Palka(100, 100, 20, 100, (128, 128, 128))
+
 ################################################################################
 # Nekonecna vykreslovaci smycka
 ################################################################################
@@ -167,6 +209,7 @@ while True:
     pohyb_palky()
     pohyb_micku()
     vykreslovaci_operace()
+    palka.vykreslit(okno)
 
     # prekresleni okna
     pygame.display.update()
