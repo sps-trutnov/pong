@@ -222,8 +222,40 @@ class Micek(Pohyblivy_predmet):
         self.tvary = {'elipsa': Predmet(Vektor(w, h), Vektor(x - w / 2, y - h / 2))}
     
     def pohnout(self):
+        # posunuti (virtualniho) micku
         super().pohnout()
         
+        # detekce kolizi s okraji okna
+        levy_okraj_okna = 0
+        pravy_okraj_okna = self.okno.rozliseni[0]
+        horni_okraj_okna = 0
+        spodni_okraj_okna = self.okno.rozliseni[1]
+        
+        levy_okraj_micku = self.pozice.x - self.rozmer.x / 2
+        pravy_okraj_micku = self.pozice.x + self.rozmer.x / 2
+        horni_okraj_micku = self.pozice.y - self.rozmer.y / 2
+        spodni_okraj_micku = self.pozice.y + self.rozmer.y / 2
+        
+        # korekce pozice a rychlosti micku v pripade kolize s okraji okna
+        if levy_okraj_micku < levy_okraj_okna:
+            self.pozice.x = self.rozmer.x / 2
+            self.rychlost.x *= -1
+        
+        if pravy_okraj_micku > pravy_okraj_okna:
+            self.pozice.x = self.okno.rozliseni[0] - self.rozmer.x / 2
+            self.rychlost.x *= -1
+        
+        if horni_okraj_micku < horni_okraj_okna:
+            self.pozice.y = self.rozmer.y / 2
+            self.rychlost.y *= -1
+        
+        if spodni_okraj_micku > spodni_okraj_okna:
+            self.pozice.y = self.okno.rozliseni[1] - self.rozmer.y / 2
+            self.rychlost.y *= -1
+        
+        # nyni je pozice micku finalne znama
+        
+        # prepocitani pozice vsech casti palky
         x = self.pozice.x
         y = self.pozice.y
         w = self.rozmer.x
@@ -304,7 +336,6 @@ def pohyb_objektu():
     # kazdy micek si svuj pohyb vyhodnoti sam
     for micek in micky:
         micek.pohnout()
-        print(micek.pozice.x, micek.pozice.y)
     
 def vykreslovaci_operace():
     # pouziva promenne definovane vyse
