@@ -11,6 +11,37 @@ from pygame.locals import *
 from pygame.event import *
 
 ################################################################################
+# Objektova reprezentace dvourozmerneho vektoru
+################################################################################
+
+class Vektor:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+    
+    def velikost(self):
+        return math.sqrt(self.x**2 + self.y**2)
+    
+    def prepsat(self, vzor):
+        self.x = vzor.x
+        self.y = vzor.y
+    
+    def nasobit(self, skalar):
+        self.x *= skalar
+        self.y *= skalar
+    
+    def secist(self, vektor):
+        self.x += vektor.x
+        self.y += vektor.y
+    
+    def otocit(self, uhel):
+        velikost = self.velikost()
+        self.uhel = math.atan2(self.y, self.x)
+        self.uhel += uhel
+        self.x = math.cos(self.uhel) * velikost
+        self.y = math.sin(self.uhel) * velikost
+
+################################################################################
 # Objektova reprezentace vykreslovaciho okna
 ################################################################################
 
@@ -41,10 +72,63 @@ class Okno:
                     sys.exit()
 
 ################################################################################
+# Objektova reprezentace hierarchie trid pro praci s predmety ve scene
+################################################################################
+
+class Vektor:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+    
+    def velikost(self):
+        return math.sqrt(self.x**2 + self.y**2)
+    
+    def prepsat(self, vzor):
+        self.x = vzor.x
+        self.y = vzor.y
+    
+    def nasobit(self, skalar):
+        self.x *= skalar
+        self.y *= skalar
+    
+    def secist(self, vektor):
+        self.x += vektor.x
+        self.y += vektor.y
+    
+    def otocit(self, uhel):
+        velikost = self.velikost()
+        self.uhel = math.atan2(self.y, self.x)
+        self.uhel += uhel
+        self.x = math.cos(self.uhel) * velikost
+        self.y = math.sin(self.uhel) * velikost
+
+class Predmet:
+    def __init__(self, pozice, rozmer):
+        self.pozice = Vektor(pozice.x, pozice.y)
+        self.rozmer = Vektor(rozmer.x, rozmer.y)
+    
+    def presunout(self, pozice):
+        self.pozice.prepsat(pozice)
+    
+    def posunout(self, posun):
+        self.pozice.secist(posun)
+    
+    def skalovat(self, faktor):
+        self.rozmer.nasobit(faktor)
+
+class Pohyblivy_predmet(Predmet):
+    def __init__(self, pozice, rozmer, rychlost):
+        super().__init__(pozice, rozmer)
+        self.rychlost = Vektor(rychlost.x, rychlost.y)
+    
+    def pohnout(self):
+        self.pozice.secist(self.rychlost)
+
+################################################################################
 # Objektova reprezentace hracovy palky
 ################################################################################
 
-class Palka:
+class Palka(Pohyblivy_predmet):
     def __init__(self, okno, pozice_x, pozice_y, sirka, vyska, barva, rychlost, klavesa_nahoru, klavesa_dolu):
         self.okno = okno
         self.barva = barva
