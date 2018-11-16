@@ -100,34 +100,6 @@ class Pohyblivy_predmet(Predmet):
         self.pozice.secist(self.rychlost)
 
 ################################################################################
-# Objektova reprezentace hraciho micku
-################################################################################
-
-class Micek(Pohyblivy_predmet):
-    def __init__(self, velikost, pozice_x, pozice_y, rychlost, uhel, okno, barva):
-        super().__init__(Vektor(velikost, velikost), Vektor(pozice_x, pozice_y), Vektor(rychlost * math.cos(uhel), rychlost * math.sin(uhel)))
-        
-        self.okno = okno
-        self.barva = barva
-        
-        x = self.pozice.x
-        y = self.pozice.y
-        w = self.rozmer.x
-        h = self.rozmer.y
-        
-        self.tvary = {'elipsa': Predmet(Vektor(w, h), Vektor(x, y))}
-    
-    def vykreslit(self, cil):
-        barva = self.barva
-        
-        x = tvary['elipsa'].pozice.x
-        y = tvary['elipsa'].pozice.y
-        w = tvary['elipsa'].rozmer.x
-        h = tvary['elipsa'].rozmer.y
-        
-        pygame.draw.ellipse(cil, barva, x, y, w, h)
-
-################################################################################
 # Objektova reprezentace hracovy palky
 ################################################################################
 
@@ -183,7 +155,7 @@ class Palka(Pohyblivy_predmet):
             self.rychlost.secist(Vektor(0, -self.max_rychlost))
         
         # posunuti (virtualni) palky
-        self.pozice.secist(self.rychlost)
+        super().pohnout()
         
         # detekce kolizi s okraji okna
         horni_okraj_okna = 0
@@ -232,6 +204,44 @@ class Palka(Pohyblivy_predmet):
         pygame.draw.ellipse(cil, barva, (x, y, w, h))
 
 ################################################################################
+# Objektova reprezentace hraciho micku
+################################################################################
+
+class Micek(Pohyblivy_predmet):
+    def __init__(self, velikost, pozice_x, pozice_y, rychlost, uhel, okno, barva):
+        super().__init__(Vektor(velikost, velikost), Vektor(pozice_x, pozice_y), Vektor(rychlost * math.cos(uhel), rychlost * math.sin(uhel)))
+        
+        self.okno = okno
+        self.barva = barva
+        
+        x = self.pozice.x
+        y = self.pozice.y
+        w = self.rozmer.x
+        h = self.rozmer.y
+        
+        self.tvary = {'elipsa': Predmet(Vektor(w, h), Vektor(x - w / 2, y - h / 2))}
+    
+    def pohnout(self):
+        super().pohnout()
+        
+        x = self.pozice.x
+        y = self.pozice.y
+        w = self.rozmer.x
+        h = self.rozmer.y
+        
+        self.tvary['elipsa'].presunout(Vektor(x - w / 2, y - h / 2))
+    
+    def vykreslit(self, cil):
+        barva = self.barva
+        
+        x = self.tvary['elipsa'].pozice.x
+        y = self.tvary['elipsa'].pozice.y
+        w = self.tvary['elipsa'].rozmer.x
+        h = self.tvary['elipsa'].rozmer.y
+        
+        pygame.draw.ellipse(cil, barva, (x, y, w, h))
+
+################################################################################
 # Inicializace
 ################################################################################
 
@@ -254,7 +264,7 @@ offset_palky = 30
 
 velikost_micku = 30
 rychlost_micku = 1
-barva_micku = (128, 0, 0)
+barva_micku = (0, 0, 128)
 
 # vytvoreni palek
 palky = []
@@ -263,7 +273,7 @@ palky.append(Palka(sirka_palky, vyska_palky, okno.rozliseni[0] - offset_palky - 
 
 # vytvoreni micku
 micky = []
-micky.append(Micek(velikost_micku, okno.rozliseni[0], okno.rozliseni[1], rychlost_micku, math.radians(-45), okno, barva_micku))
+micky.append(Micek(velikost_micku, (okno.rozliseni[0] - velikost_micku) / 2, (okno.rozliseni[1] - velikost_micku) / 2, rychlost_micku, math.radians(-45), okno, barva_micku))
 
 ################################################################################
 # Pomocne podprogramy
@@ -283,6 +293,19 @@ def zpracovani_udalosti():
     for palka in palky:
         palka.vyhodnotit_reakce(udalosti)
 
+def pohyb_objektu():
+    # pouziva promenne definovane vyse
+    global palky, micky
+
+    # kazda palka si svuj pohyb vyhodnoti sama
+    for palka in palky:
+        palka.pohnout()
+    
+    # kazdy micek si svuj pohyb vyhodnoti sam
+    for micek in micky:
+        micek.pohnout()
+        print(micek.pozice.x, micek.pozice.y)
+    
 def vykreslovaci_operace():
     # pouziva promenne definovane vyse
     global okno, palky, micky
@@ -296,21 +319,7 @@ def vykreslovaci_operace():
     
     # vykresleni micku
     for micek in micky:
-        # TO DO
-        pass
-    
-def pohyb_objektu():
-    # pouziva promenne definovane vyse
-    global palky, micky
-
-    # kazda palka si svuj pohyb vyhodnoti sama
-    for palka in palky:
-        palka.pohnout()
-    
-    # kazdy micek si svuj pohyb vyhodnoti sam
-    for micek in micky:
-        # TO DO
-        pass
+        micek.vykreslit(okno.displej)
     
 ################################################################################
 # Nekonecna vykreslovaci smycka
