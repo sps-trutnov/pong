@@ -4,6 +4,8 @@
 
 # importovani knihovny pro praci s grafikou
 import pygame
+# importovani knihovny s matematickymi funkcemi
+import math
 # importovani knihovny pro praci se systemem
 import sys
 # importovani vsech soucasti pygame.locals
@@ -76,9 +78,9 @@ class Okno:
 ################################################################################
 
 class Predmet:
-    def __init__(self, pozice, rozmer):
-        self.pozice = Vektor(pozice.x, pozice.y)
+    def __init__(self, rozmer, pozice):
         self.rozmer = Vektor(rozmer.x, rozmer.y)
+        self.pozice = Vektor(pozice.x, pozice.y)
     
     def presunout(self, pozice):
         self.pozice.prepsat(pozice)
@@ -90,40 +92,69 @@ class Predmet:
         self.rozmer.nasobit(faktor)
 
 class Pohyblivy_predmet(Predmet):
-    def __init__(self, pozice, rozmer, rychlost):
-        super().__init__(pozice, rozmer)
+    def __init__(self, rozmer, pozice, rychlost):
+        super().__init__(rozmer, pozice)
         self.rychlost = Vektor(rychlost.x, rychlost.y)
     
     def pohnout(self):
         self.pozice.secist(self.rychlost)
 
 ################################################################################
+# Objektova reprezentace hraciho micku
+################################################################################
+
+class Micek(Pohyblivy_predmet):
+    def __init__(self, velikost, pozice_x, pozice_y, rychlost, uhel, okno, barva):
+        super().__init__(Vektor(velikost, velikost), Vektor(pozice_x, pozice_y), Vektor(rychlost * math.cos(uhel), rychlost * math.sin(uhel)))
+        
+        self.okno = okno
+        self.barva = barva
+        
+        x = self.pozice.x
+        y = self.pozice.y
+        w = self.rozmer.x
+        h = self.rozmer.y
+        
+        self.tvary = {'elipsa': Predmet(Vektor(w, h), Vektor(x, y))}
+    
+    def vykreslit(self, cil):
+        barva = self.barva
+        
+        x = tvary['elipsa'].pozice.x
+        y = tvary['elipsa'].pozice.y
+        w = tvary['elipsa'].rozmer.x
+        h = tvary['elipsa'].rozmer.y
+        
+        pygame.draw.ellipse(cil, barva, x, y, w, h)
+
+################################################################################
 # Objektova reprezentace hracovy palky
 ################################################################################
 
 class Palka(Pohyblivy_predmet):
-    def __init__(self, okno, pozice_x, pozice_y, sirka, vyska, barva, rychlost, klavesa_nahoru, klavesa_dolu):
+    def __init__(self, sirka, vyska, pozice_x, pozice_y, rychlost, klavesa_nahoru, klavesa_dolu, okno, barva):
+        super().__init__(Vektor(sirka, vyska), Vektor(pozice_x, pozice_y), Vektor(0, 0))
+        
+        self.max_rychlost = rychlost
+        
         self.okno = okno
         self.barva = barva
-        self.rychlost = rychlost
-        
-        x = self.pozice_x = pozice_x
-        y = self.pozice_y = pozice_y
-        w = self.sirka = sirka
-        h = self.vyska = vyska
-        
-        o = {'x': x - w / 2, 'y': y - (h - w) / 2, 'w': w, 'h': h - w}
-        e1 = {'x': x - w / 2, 'y': y - h / 2, 'w': w, 'h': w}
-        e2 = {'x': x - w / 2, 'y': y + h / 2 - w, 'w': w, 'h': w}
-        
-        self.tvary = {'obdelnik': o, 'horni_elipsa': e1, 'spodni_elipsa': e2}
         
         self.klavesa_nahoru = klavesa_nahoru
         self.klavesa_dolu = klavesa_dolu
         
         self.pohyb_nahoru = False
         self.pohyb_dolu = False
-    
+        
+        x = self.pozice.x
+        y = self.pozice.y
+        w = self.rozmer.x
+        h = self.rozmer.y
+        
+        self.tvary = {'obdelnik': Predmet(Vektor(w, h - w), Vektor(x - w / 2, y - (h - w) / 2)),
+                      'horni_elipsa': Predmet(Vektor(w, w), Vektor(x - w / 2, y - h / 2)),
+                      'spodni_elipsa': Predmet(Vektor(w, w), Vektor(x - w / 2, y + h / 2 - w))}
+        
     def vyhodnotit_reakce(self, udalosti):
         # zpracovani udalosti
         for udalost in udalosti:
@@ -142,73 +173,63 @@ class Palka(Pohyblivy_predmet):
                     self.pohyb_dolu = False
     
     def pohnout(self):
-        # posunuti palky
+        # nastaveni rychlosti podle smeru pohybu
+        self.rychlost = Vektor(0, 0)
+        
         if self.pohyb_dolu:
-            self.pozice_y += self.rychlost
+            self.rychlost.secist(Vektor(0, self.max_rychlost))
         
         if self.pohyb_nahoru:
-            self.pozice_y -= self.rychlost
+            self.rychlost.secist(Vektor(0, -self.max_rychlost))
+        
+        # posunuti (virtualni) palky
+        self.pozice.secist(self.rychlost)
         
         # detekce kolizi s okraji okna
         horni_okraj_okna = 0
         spodni_okraj_okna = self.okno.rozliseni[1]
-        horni_okraj_palky = self.pozice_y - self.vyska / 2
-        spodni_okraj_palky = self.pozice_y + self.vyska / 2
+        horni_okraj_palky = self.pozice.y - self.rozmer.y / 2
+        spodni_okraj_palky = self.pozice.y + self.rozmer.y / 2
         
-        # pokud horni okraj palky presahuje horni okraj okna...
+        # korekce pozice palky v pripade kolize s okraji okna
         if horni_okraj_palky < horni_okraj_okna:
-            # ...presune se palka tak, aby se hornim okrajem dotykala okraje okna
-            self.pozice_y = self.vyska / 2
+            self.pozice.y = self.rozmer.y / 2
         
-        # pokud spodni okraj palky presahuje spodni okraj okna...
         if spodni_okraj_palky > spodni_okraj_okna:
-            # ...presune se palka tak, aby se spodnim okrajem dotykala okraje okna
-            self.pozice_y = self.okno.rozliseni[1] - self.vyska / 2
+            self.pozice.y = self.okno.rozliseni[1] - self.rozmer.y / 2
+        
+        # nyni je pozice palky finalne znama
         
         # prepocitani pozice vsech casti palky
-        x = self.pozice_x
-        y = self.pozice_y
-        w = self.sirka
-        h = self.vyska
+        x = self.pozice.x
+        y = self.pozice.y
+        w = self.rozmer.x
+        h = self.rozmer.y
         
-        self.tvary['obdelnik']['x'] = x - w / 2
-        self.tvary['obdelnik']['y'] = y - (h - w) / 2
-        
-        self.tvary['horni_elipsa']['x'] = x - w / 2
-        self.tvary['horni_elipsa']['y'] = y - h / 2
-        
-        self.tvary['spodni_elipsa']['x'] = x - w / 2
-        self.tvary['spodni_elipsa']['y'] = y + h / 2 - w
+        self.tvary['obdelnik'].presunout(Vektor(x - w / 2, y - (h - w) / 2))
+        self.tvary['horni_elipsa'].presunout(Vektor(x - w / 2, y - h / 2))
+        self.tvary['spodni_elipsa'].presunout(Vektor(x - w / 2, y + h / 2 - w))
 
     def vykreslit(self, cil):
         barva = self.barva
         
-        x = self.tvary['obdelnik']['x']
-        y = self.tvary['obdelnik']['y']
-        w = self.tvary['obdelnik']['w']
-        h = self.tvary['obdelnik']['h']
+        x = self.tvary['obdelnik'].pozice.x
+        y = self.tvary['obdelnik'].pozice.y
+        w = self.tvary['obdelnik'].rozmer.x
+        h = self.tvary['obdelnik'].rozmer.y
         pygame.draw.rect(cil, barva, (x, y, w, h))
         
-        x = self.tvary['horni_elipsa']['x']
-        y = self.tvary['horni_elipsa']['y']
-        w = self.tvary['horni_elipsa']['w']
-        h = self.tvary['horni_elipsa']['h']
+        x = self.tvary['horni_elipsa'].pozice.x
+        y = self.tvary['horni_elipsa'].pozice.y
+        w = self.tvary['horni_elipsa'].rozmer.x
+        h = self.tvary['horni_elipsa'].rozmer.y
         pygame.draw.ellipse(cil, barva, (x, y, w, h))
         
-        x = self.tvary['spodni_elipsa']['x']
-        y = self.tvary['spodni_elipsa']['y']
-        w = self.tvary['spodni_elipsa']['w']
-        h = self.tvary['spodni_elipsa']['h']
+        x = self.tvary['spodni_elipsa'].pozice.x
+        y = self.tvary['spodni_elipsa'].pozice.y
+        w = self.tvary['spodni_elipsa'].rozmer.x
+        h = self.tvary['spodni_elipsa'].rozmer.y
         pygame.draw.ellipse(cil, barva, (x, y, w, h))
-
-################################################################################
-# Objektova reprezentace hraciho micku
-################################################################################
-
-class Micek:
-    def __init__(self):
-        # placeholder pro pozdejsi doplneni
-        pass
 
 ################################################################################
 # Inicializace
@@ -227,18 +248,22 @@ okno.displej = pygame.display.set_mode(okno.rozliseni)
 # nastaveni parametru hry
 sirka_palky = 15
 vyska_palky = 75
-barva_palky = (0, 0, 0)
 rychlost_palky = 0.5
+barva_palky = (0, 0, 0)
 offset_palky = 30
+
+velikost_micku = 30
+rychlost_micku = 1
+barva_micku = (128, 0, 0)
 
 # vytvoreni palek
 palky = []
-palky.append(Palka(okno, offset_palky + sirka_palky / 2, okno.rozliseni[1] / 2, sirka_palky, vyska_palky, barva_palky, rychlost_palky, pygame.K_w, pygame.K_s))
-palky.append(Palka(okno, okno.rozliseni[0] - offset_palky - sirka_palky / 2, okno.rozliseni[1] / 2, sirka_palky, vyska_palky, barva_palky, rychlost_palky, pygame.K_UP, pygame.K_DOWN))
+palky.append(Palka(sirka_palky, vyska_palky, offset_palky + sirka_palky / 2, okno.rozliseni[1] / 2, rychlost_palky, pygame.K_w, pygame.K_s, okno, barva_palky))
+palky.append(Palka(sirka_palky, vyska_palky, okno.rozliseni[0] - offset_palky - sirka_palky / 2, okno.rozliseni[1] / 2, rychlost_palky, pygame.K_UP, pygame.K_DOWN, okno, barva_palky))
 
 # vytvoreni micku
 micky = []
-# TO DO
+micky.append(Micek(velikost_micku, okno.rozliseni[0], okno.rozliseni[1], rychlost_micku, math.radians(-45), okno, barva_micku))
 
 ################################################################################
 # Pomocne podprogramy
