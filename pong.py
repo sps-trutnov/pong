@@ -176,8 +176,8 @@ offset_palky = 30
 
 # vytvoreni palek
 palky = []
-palky.append(Palka(okno, offset_palky, okno.rozliseni[1] / 2, sirka_palky, vyska_palky, barva_palky, rychlost_palky, pygame.K_w, pygame.K_s))
-palky.append(Palka(okno, okno.rozliseni[0] - offset_palky - sirka_palky, okno.rozliseni[1] / 2, sirka_palky, vyska_palky, barva_palky, rychlost_palky, pygame.K_UP, pygame.K_DOWN))
+palky.append(Palka(okno, offset_palky + sirka_palky / 2, okno.rozliseni[1] / 2, sirka_palky, vyska_palky, barva_palky, rychlost_palky, pygame.K_w, pygame.K_s))
+palky.append(Palka(okno, okno.rozliseni[0] - offset_palky - sirka_palky / 2, okno.rozliseni[1] / 2, sirka_palky, vyska_palky, barva_palky, rychlost_palky, pygame.K_UP, pygame.K_DOWN))
 
 # vytvoreni micku
 micky = []
