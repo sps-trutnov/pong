@@ -75,33 +75,6 @@ class Okno:
 # Objektova reprezentace hierarchie trid pro praci s predmety ve scene
 ################################################################################
 
-class Vektor:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-    
-    def velikost(self):
-        return math.sqrt(self.x**2 + self.y**2)
-    
-    def prepsat(self, vzor):
-        self.x = vzor.x
-        self.y = vzor.y
-    
-    def nasobit(self, skalar):
-        self.x *= skalar
-        self.y *= skalar
-    
-    def secist(self, vektor):
-        self.x += vektor.x
-        self.y += vektor.y
-    
-    def otocit(self, uhel):
-        velikost = self.velikost()
-        self.uhel = math.atan2(self.y, self.x)
-        self.uhel += uhel
-        self.x = math.cos(self.uhel) * velikost
-        self.y = math.sin(self.uhel) * velikost
-
 class Predmet:
     def __init__(self, pozice, rozmer):
         self.pozice = Vektor(pozice.x, pozice.y)
