@@ -52,6 +52,8 @@ class Okno:
         self.titulek = titulek
         self.rozliseni = rozliseni
         self.barva_pozadi = barva_pozadi
+
+        self.objekty = []
         self.displej = None
     
     def vyhodnotit_reakce(self, udalosti):
@@ -109,6 +111,7 @@ class Palka(Pohyblivy_predmet):
         
         self.max_rychlost = rychlost
         
+        okno.objekty.append(self)
         self.okno = okno
         self.barva = barva
         
@@ -211,6 +214,7 @@ class Micek(Pohyblivy_predmet):
     def __init__(self, velikost, pozice_x, pozice_y, rychlost, uhel, okno, barva):
         super().__init__(Vektor(velikost, velikost), Vektor(pozice_x, pozice_y), Vektor(rychlost * math.cos(uhel), rychlost * math.sin(uhel)))
         
+        okno.objekty.append(self)
         self.okno = okno
         self.barva = barva
         
@@ -295,7 +299,7 @@ barva_palky = (0, 0, 0)
 offset_palky = 30
 
 velikost_micku = 30
-rychlost_micku = 1
+rychlost_micku = 0.6
 barva_micku = (0, 0, 128)
 
 # vytvoreni palek
