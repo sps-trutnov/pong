@@ -99,16 +99,51 @@ class Pohyblivy_predmet(Predmet):
     def __init__(self, rozmer, pozice, rychlost, xy_min, xy_max):
         super().__init__(rozmer, pozice)
         self.rychlost = Vektor(rychlost.x, rychlost.y)
-        self.prostredi = {'min': Vektor(xy_min.x, xy_min.y),
-                          'max': Vektor(xy_max.x, xy_max.y)}
-        self.okraje = {'min': Vektor(pozice.x - rozmer.x / 2, pozice.y - rozmer.y / 2),
-                       'max': Vektor(pozice.x + rozmer.x / 2, pozice.y + rozmer.y / 2)}
+        self.hranice_prostredi = {'min': Vektor(xy_min.x, xy_min.y),
+                                  'max': Vektor(xy_max.x, xy_max.y)}
+        self.okraje_predmetu = {'min': Vektor(-rozmer.x / 2, -rozmer.y / 2),
+                                'max': Vektor(rozmer.x / 2, rozmer.y / 2)}
     
-    def pohnout(self):
+    def pohnout(self, zastavit):
         self.posunout(self.rychlost)
         
-        # kolize s prostredim
+        x = self.pozice.x
+        y = self.pozice.y
         
+        xo_min = self.okraje_predmetu['min'].x
+        yo_min = self.okraje_predmetu['min'].y
+        xo_max = self.okraje_predmetu['max'].x
+        yo_max = self.okraje_predmetu['max'].y
+        
+        xh_min = self.hranice_prostredi['min'].x
+        yh_min = self.hranice_prostredi['min'].y
+        xh_max = self.hranice_prostredi['max'].x
+        yh_max = self.hranice_prostredi['max'].y
+        
+        nastala_kolize = False
+        
+        if xh_min != None and xo_min + x < xh_min:
+            self.posunout(Vektor(xh_min - (xo_min + x), 0))
+            self.rychlost.x *= -1
+            nastala_kolize = True
+        
+        if yh_min != None and yo_min + y < yh_min:
+            self.posunout(Vektor(0, yh_min - (yo_min + y)))
+            self.rychlost.y *= -1
+            nastala_kolize = True
+        
+        if xh_max != None and xo_max + x > xh_max:
+            self.posunout(Vektor(xh_max - (xo_max + x), 0))
+            self.rychlost.x *= -1
+            nastala_kolize = True
+        
+        if yh_max != None and yo_max + y > yh_max:
+            self.posunout(Vektor(0, yh_max - (yo_max + y)))
+            self.rychlost.y *= -1
+            nastala_kolize = True
+        
+        if zastavit and nastala_kolize:
+            self.rychlost.nasobit(0)
 
 ################################################################################
 # Objektova reprezentace hracovy palky
@@ -166,23 +201,8 @@ class Palka(Pohyblivy_predmet):
         if self.pohyb_nahoru:
             self.rychlost.secist(Vektor(0, -self.max_rychlost))
         
-        # posunuti (virtualni) palky
-        super().pohnout()
-        
-        # detekce kolizi s okraji okna
-        horni_okraj_okna = 0
-        spodni_okraj_okna = self.okno.rozliseni.y
-        horni_okraj_palky = self.pozice.y - self.rozmer.y / 2
-        spodni_okraj_palky = self.pozice.y + self.rozmer.y / 2
-        
-        # korekce pozice palky v pripade kolize s okraji okna
-        if horni_okraj_palky < horni_okraj_okna:
-            self.pozice.y = self.rozmer.y / 2
-        
-        if spodni_okraj_palky > spodni_okraj_okna:
-            self.pozice.y = self.okno.rozliseni[1] - self.rozmer.y / 2
-        
-        # nyni je pozice palky finalne znama
+        # posunuti stredu palky
+        super().pohnout(True)
         
         # prepocitani pozice vsech casti palky
         x = self.pozice.x
@@ -235,40 +255,10 @@ class Micek(Pohyblivy_predmet):
         self.tvary = {'elipsa': Predmet(Vektor(w, h), Vektor(x - w / 2, y - h / 2))}
     
     def pohnout(self):
-        # posunuti (virtualniho) micku
-        super().pohnout()
+        # posunuti stredu micku
+        super().pohnout(False)
         
-        # detekce kolizi s okraji okna
-        levy_okraj_okna = 0
-        pravy_okraj_okna = self.okno.rozliseni.x
-        horni_okraj_okna = 0
-        spodni_okraj_okna = self.okno.rozliseni.y
-        
-        levy_okraj_micku = self.pozice.x - self.rozmer.x / 2
-        pravy_okraj_micku = self.pozice.x + self.rozmer.x / 2
-        horni_okraj_micku = self.pozice.y - self.rozmer.y / 2
-        spodni_okraj_micku = self.pozice.y + self.rozmer.y / 2
-        
-        # korekce pozice a rychlosti micku v pripade kolize s okraji okna
-        if levy_okraj_micku < levy_okraj_okna:
-            self.pozice.x = self.rozmer.x / 2
-            self.rychlost.x *= -1
-        
-        if pravy_okraj_micku > pravy_okraj_okna:
-            self.pozice.x = self.okno.rozliseni.x - self.rozmer.x / 2
-            self.rychlost.x *= -1
-        
-        if horni_okraj_micku < horni_okraj_okna:
-            self.pozice.y = self.rozmer.y / 2
-            self.rychlost.y *= -1
-        
-        if spodni_okraj_micku > spodni_okraj_okna:
-            self.pozice.y = self.okno.rozliseni.y - self.rozmer.y / 2
-            self.rychlost.y *= -1
-        
-        # nyni je pozice micku finalne znama
-        
-        # prepocitani pozice vsech casti palky
+        # prepocitani pozice vsech casti micku
         x = self.pozice.x
         y = self.pozice.y
         w = self.rozmer.x
@@ -316,20 +306,21 @@ palky.append(Palka(sirka_palek, vyska_palek, okno.rozliseni.x - offset_palek - s
 
 # vytvoreni micku
 micky = []
-#micky.append(Micek(velikost_micku, (okno.rozliseni[0] - velikost_micku) / 2, (okno.rozliseni[1] - velikost_micku) / 2 + 25, rychlost_micku, math.radians(+35), okno, (200, 0, 0)))
-#micky.append(Micek(velikost_micku, (okno.rozliseni[0] - velikost_micku) / 2, (okno.rozliseni[1] - velikost_micku) / 2 - 50, rychlost_micku, math.radians(-25), okno, (0, 200, 0)))
-#micky.append(Micek(velikost_micku, (okno.rozliseni[0] - velikost_micku) / 2, (okno.rozliseni[1] - velikost_micku) / 2 - 75, rychlost_micku, math.radians(-50), okno, (0, 0, 200)))
 
 for i in range(100):
     v = velikost_micku
+    
     x = (okno.rozliseni.x - velikost_micku) / 2
     y = (okno.rozliseni.y - velikost_micku) / 2
     y_offset = random.randint(-200, +200)
+    
     s = rychlost_micku * random.randint(5, 15) / 10
     u = random.randint(0, 360)
+    
     r = random.randint(0, 255)
     g = random.randint(0, 255)
     b = random.randint(0, 255)
+    
     micky.append(Micek(v, x, y + y_offset, s, math.radians(u), okno, (r, g, b)))
 
 ################################################################################
