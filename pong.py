@@ -52,15 +52,15 @@ class Vektor:
 class Okno:
     def __init__(self, titulek, rozliseni, barva_pozadi):
         self.titulek = titulek
-        self.rozliseni = rozliseni
+        self.rozliseni = Vektor(rozliseni[0],rozliseni[1])
         self.barva_pozadi = barva_pozadi
-
+        
         self.objekty = []
         self.displej = None
     
     def vyhodnotit_reakce(self, udalosti):
         # prochazeni vsech udalosti, na ktere muze okno reagovat
-        for udalost in pygame.event.get():
+        for udalost in udalosti:
             # pokud je nalezena udalost typu zavreni okna...
             if udalost.type == pygame.QUIT:
                 # okno se zavre
@@ -96,12 +96,19 @@ class Predmet:
         self.rozmer.nasobit(faktor)
 
 class Pohyblivy_predmet(Predmet):
-    def __init__(self, rozmer, pozice, rychlost):
+    def __init__(self, rozmer, pozice, rychlost, xy_min, xy_max):
         super().__init__(rozmer, pozice)
         self.rychlost = Vektor(rychlost.x, rychlost.y)
+        self.prostredi = {'min': Vektor(xy_min.x, xy_min.y),
+                          'max': Vektor(xy_max.x, xy_max.y)}
+        self.okraje = {'min': Vektor(pozice.x - rozmer.x / 2, pozice.y - rozmer.y / 2),
+                       'max': Vektor(pozice.x + rozmer.x / 2, pozice.y + rozmer.y / 2)}
     
     def pohnout(self):
-        self.pozice.secist(self.rychlost)
+        self.posunout(self.rychlost)
+        
+        # kolize s prostredim
+        
 
 ################################################################################
 # Objektova reprezentace hracovy palky
@@ -109,7 +116,7 @@ class Pohyblivy_predmet(Predmet):
 
 class Palka(Pohyblivy_predmet):
     def __init__(self, sirka, vyska, pozice_x, pozice_y, rychlost, klavesa_nahoru, klavesa_dolu, okno, barva):
-        super().__init__(Vektor(sirka, vyska), Vektor(pozice_x, pozice_y), Vektor(0, 0))
+        super().__init__(Vektor(sirka, vyska), Vektor(pozice_x, pozice_y), Vektor(0, 0), Vektor(0,0), okno.rozliseni)
         
         self.max_rychlost = rychlost
         
@@ -164,7 +171,7 @@ class Palka(Pohyblivy_predmet):
         
         # detekce kolizi s okraji okna
         horni_okraj_okna = 0
-        spodni_okraj_okna = self.okno.rozliseni[1]
+        spodni_okraj_okna = self.okno.rozliseni.y
         horni_okraj_palky = self.pozice.y - self.rozmer.y / 2
         spodni_okraj_palky = self.pozice.y + self.rozmer.y / 2
         
@@ -214,7 +221,7 @@ class Palka(Pohyblivy_predmet):
 
 class Micek(Pohyblivy_predmet):
     def __init__(self, velikost, pozice_x, pozice_y, rychlost, uhel, okno, barva):
-        super().__init__(Vektor(velikost, velikost), Vektor(pozice_x, pozice_y), Vektor(rychlost * math.cos(uhel), rychlost * math.sin(uhel)))
+        super().__init__(Vektor(velikost, velikost), Vektor(pozice_x, pozice_y), Vektor(rychlost * math.cos(uhel), rychlost * math.sin(uhel)), Vektor(0, 0), okno.rozliseni)
         
         okno.objekty.append(self)
         self.okno = okno
@@ -233,9 +240,9 @@ class Micek(Pohyblivy_predmet):
         
         # detekce kolizi s okraji okna
         levy_okraj_okna = 0
-        pravy_okraj_okna = self.okno.rozliseni[0]
+        pravy_okraj_okna = self.okno.rozliseni.x
         horni_okraj_okna = 0
-        spodni_okraj_okna = self.okno.rozliseni[1]
+        spodni_okraj_okna = self.okno.rozliseni.y
         
         levy_okraj_micku = self.pozice.x - self.rozmer.x / 2
         pravy_okraj_micku = self.pozice.x + self.rozmer.x / 2
@@ -248,7 +255,7 @@ class Micek(Pohyblivy_predmet):
             self.rychlost.x *= -1
         
         if pravy_okraj_micku > pravy_okraj_okna:
-            self.pozice.x = self.okno.rozliseni[0] - self.rozmer.x / 2
+            self.pozice.x = self.okno.rozliseni.x - self.rozmer.x / 2
             self.rychlost.x *= -1
         
         if horni_okraj_micku < horni_okraj_okna:
@@ -256,7 +263,7 @@ class Micek(Pohyblivy_predmet):
             self.rychlost.y *= -1
         
         if spodni_okraj_micku > spodni_okraj_okna:
-            self.pozice.y = self.okno.rozliseni[1] - self.rozmer.y / 2
+            self.pozice.y = self.okno.rozliseni.y - self.rozmer.y / 2
             self.rychlost.y *= -1
         
         # nyni je pozice micku finalne znama
@@ -291,7 +298,7 @@ okno = Okno('Pong', (800, 600), (255, 255, 255))
 # nastaveni titulku okna
 pygame.display.set_caption(okno.titulek)
 # nastaveni velikosti okna
-okno.displej = pygame.display.set_mode(okno.rozliseni)
+okno.displej = pygame.display.set_mode((okno.rozliseni.x, okno.rozliseni.y))
 
 # nastaveni parametru hry
 sirka_palek = 15
@@ -304,8 +311,8 @@ rychlost_micku = 0.6
 
 # vytvoreni palek
 palky = []
-palky.append(Palka(sirka_palek, vyska_palek, offset_palek + sirka_palek / 2, okno.rozliseni[1] / 2, rychlost_palek, pygame.K_w, pygame.K_s, okno, (0, 0, 0)))
-palky.append(Palka(sirka_palek, vyska_palek, okno.rozliseni[0] - offset_palek - sirka_palek / 2, okno.rozliseni[1] / 2, rychlost_palek, pygame.K_UP, pygame.K_DOWN, okno, (0, 0, 0)))
+palky.append(Palka(sirka_palek, vyska_palek, offset_palek + sirka_palek / 2, okno.rozliseni.y / 2, rychlost_palek, pygame.K_w, pygame.K_s, okno, (0, 0, 0)))
+palky.append(Palka(sirka_palek, vyska_palek, okno.rozliseni.x - offset_palek - sirka_palek / 2, okno.rozliseni.y / 2, rychlost_palek, pygame.K_UP, pygame.K_DOWN, okno, (0, 0, 0)))
 
 # vytvoreni micku
 micky = []
@@ -315,8 +322,8 @@ micky = []
 
 for i in range(100):
     v = velikost_micku
-    x = (okno.rozliseni[0] - velikost_micku) / 2
-    y = (okno.rozliseni[1] - velikost_micku) / 2
+    x = (okno.rozliseni.x - velikost_micku) / 2
+    y = (okno.rozliseni.y - velikost_micku) / 2
     y_offset = random.randint(-200, +200)
     s = rychlost_micku * random.randint(5, 15) / 10
     u = random.randint(0, 360)
