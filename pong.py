@@ -4,6 +4,10 @@
 
 # importovani knihovny pro praci s grafikou
 import pygame
+# importovani knihovny pro praci s nahodnymi hodnotami
+import random
+# importovani knihovny s matematickymi funkcemi
+import math
 # importovani knihovny pro praci se systemem
 import sys
 # importovani vsech soucasti pygame.locals
@@ -138,27 +142,43 @@ rychlost_posunu_palky = 0.5
 pygame.init()
 
 # vytvoreni vykreslovaciho okna
-okno = Okno('Pong', (640, 480), (255, 255, 255))
+okno = Okno('Pong', (800, 600), (255, 255, 255))
 # nastaveni titulku okna
 pygame.display.set_caption(okno.titulek)
 # nastaveni velikosti okna
 okno.displej = pygame.display.set_mode(okno.rozliseni)
 
 # nastaveni parametru hry
-sirka_palky = 15
-vyska_palky = 75
-barva_palky = (0, 0, 0)
-rychlost_palky = 0.5
-offset_palky = 30
+sirka_palek = 15
+vyska_palek = 75
+rychlost_palek = 0.5
+offset_palek = 30
+
+velikost_micku = 30
+rychlost_micku = 0.6
 
 # vytvoreni palek
 palky = []
-palky.append(Palka(okno, offset_palky, okno.rozliseni[1] / 2, sirka_palky, vyska_palky, barva_palky, rychlost_palky, pygame.K_w, pygame.K_s))
-palky.append(Palka(okno, okno.rozliseni[0] - offset_palky - sirka_palky, okno.rozliseni[1] / 2, sirka_palky, vyska_palky, barva_palky, rychlost_palky, pygame.K_UP, pygame.K_DOWN))
+palky.append(Palka(sirka_palek, vyska_palek, offset_palek + sirka_palek / 2, okno.rozliseni[1] / 2, rychlost_palek, pygame.K_w, pygame.K_s, okno, (0, 0, 0)))
+palky.append(Palka(sirka_palek, vyska_palek, okno.rozliseni[0] - offset_palek - sirka_palek / 2, okno.rozliseni[1] / 2, rychlost_palek, pygame.K_UP, pygame.K_DOWN, okno, (0, 0, 0)))
 
 # vytvoreni micku
 micky = []
-# TO DO
+#micky.append(Micek(velikost_micku, (okno.rozliseni[0] - velikost_micku) / 2, (okno.rozliseni[1] - velikost_micku) / 2 + 25, rychlost_micku, math.radians(+35), okno, (200, 0, 0)))
+#micky.append(Micek(velikost_micku, (okno.rozliseni[0] - velikost_micku) / 2, (okno.rozliseni[1] - velikost_micku) / 2 - 50, rychlost_micku, math.radians(-25), okno, (0, 200, 0)))
+#micky.append(Micek(velikost_micku, (okno.rozliseni[0] - velikost_micku) / 2, (okno.rozliseni[1] - velikost_micku) / 2 - 75, rychlost_micku, math.radians(-50), okno, (0, 0, 200)))
+
+for i in range(100):
+    v = velikost_micku
+    x = (okno.rozliseni[0] - velikost_micku) / 2
+    y = (okno.rozliseni[1] - velikost_micku) / 2
+    y_offset = random.randint(-200, +200)
+    s = rychlost_micku * random.randint(5, 15) / 10
+    u = random.randint(0, 360)
+    r = random.randint(0, 255)
+    g = random.randint(0, 255)
+    b = random.randint(0, 255)
+    micky.append(Micek(v, x, y + y_offset, s, math.radians(u), okno, (r, g, b)))
 
 ################################################################################
 # Pomocne podprogramy
