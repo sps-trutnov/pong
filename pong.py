@@ -43,15 +43,45 @@ class Okno:
                     pygame.quit()
                     # aplikace skonci
                     sys.exit()
+    
+    def vykreslit(self):
+        self.displej.fill(self.barva_pozadi)
 
-barva_pozadi = (255, 255, 255)
-barva_palky = (0, 0, 0)
+################################################################################
+# Objektova reprezentace predmetu ve scene
+################################################################################
 
-class Palka:
-    def __init__(self, okno, pozice_x, pozice_y, sirka, vyska, barva, rychlost, klavesa_nahoru, klavesa_dolu):
-        self.okno = okno
-        self.barva = barva
-        self.rychlost = rychlost
+class Predmet:
+    def __init__(self, rozmer, pozice):
+        self.rozmer = Vektor(rozmer.x, rozmer.y)
+        self.pozice = Vektor(pozice.x, pozice.y)
+    
+    def presunout(self, pozice):
+        self.pozice.prepsat(pozice)
+    
+    def posunout(self, posun):
+        self.pozice.secist(posun)
+    
+    def skalovat(self, faktor):
+        self.rozmer.nasobit(faktor)
+
+################################################################################
+# Objektova reprezentace pohybliveho predmetu ve scene
+################################################################################
+
+class Pohyblivy_predmet(Predmet):
+    def __init__(self, rozmer, pozice, rychlost, xy_min, xy_max):
+        super().__init__(rozmer, pozice)
+        
+        self.rychlost = Vektor(rychlost.x, rychlost.y)
+        
+        self.hranice_prostredi = {'min': Vektor(xy_min.x, xy_min.y),
+                                  'max': Vektor(xy_max.x, xy_max.y)}
+        self.okraje_predmetu = {'min': Vektor(-rozmer.x / 2, -rozmer.y / 2),
+                                'max': Vektor(rozmer.x / 2, rozmer.y / 2)}
+    
+    def pohnout(self, pri_kolizi_zastavit):
+        self.posunout(self.rychlost)
         
         x = self.pozice_x = pozice_x
         y = self.pozice_y = pozice_y
@@ -63,6 +93,45 @@ class Palka:
         e2 = {'x': x - w / 2, 'y': y + h / 2 - w, 'w': w, 'h': w}
         
         self.tvary = {'obdelnik': o, 'horni_elipsa': e1, 'spodni_elipsa': e2}
+        
+        nastala_kolize = False
+        
+        if xh_min != None and xo_min + x < xh_min:
+            self.posunout(Vektor(xh_min - (xo_min + x), 0))
+            self.rychlost.x *= -1
+            nastala_kolize = True
+        
+        if yh_min != None and yo_min + y < yh_min:
+            self.posunout(Vektor(0, yh_min - (yo_min + y)))
+            self.rychlost.y *= -1
+            nastala_kolize = True
+        
+        if xh_max != None and xo_max + x > xh_max:
+            self.posunout(Vektor(xh_max - (xo_max + x), 0))
+            self.rychlost.x *= -1
+            nastala_kolize = True
+        
+        if yh_max != None and yo_max + y > yh_max:
+            self.posunout(Vektor(0, yh_max - (yo_max + y)))
+            self.rychlost.y *= -1
+            nastala_kolize = True
+        
+        if nastala_kolize and pri_kolizi_zastavit:
+            self.rychlost.nasobit(0)
+
+################################################################################
+# Objektova reprezentace hracovy palky
+################################################################################
+
+class Palka(Pohyblivy_predmet):
+    def __init__(self, sirka, vyska, pozice_x, pozice_y, rychlost, klavesa_nahoru, klavesa_dolu, okno, barva):
+        super().__init__(Vektor(sirka, vyska), Vektor(pozice_x, pozice_y), Vektor(0, 0), Vektor(0,0), okno.rozliseni)
+        
+        self.max_rychlost = rychlost
+        
+        okno.objekty.append(self)
+        self.okno = okno
+        self.barva = barva
         
         self.klavesa_nahoru = klavesa_nahoru
         self.klavesa_dolu = klavesa_dolu
@@ -185,31 +254,32 @@ for i in range(100):
 ################################################################################
 
 def zpracovani_udalosti():
-    # pouziva promenne definovane vyse
     global okno, palky
     
-    # seznam udalosti, na ktere lze reagovat
     udalosti = pygame.event.get()
     
-    # nejdrive zpracuje mozne reakce okno
     okno.vyhodnotit_reakce(udalosti)
     
-    # kazda palka si svoji reakci vyhodnoti sama
     for palka in palky:
         palka.vyhodnotit_reakce(udalosti)
 
+def pohyb_objektu():
+    global palky, micky
+
+    for palka in palky:
+        palka.pohnout()
+    
+    for micek in micky:
+        micek.pohnout()
+    
 def vykreslovaci_operace():
-    # pouziva promenne definovane vyse
     global okno, palky, micky
     
-    # vyplneni okna barvou pozadi
-    okno.displej.fill(okno.barva_pozadi)
+    okno.vykreslit()
     
-    # vykresleni palek
     for palka in palky:
         palka.vykreslit(okno.displej)
     
-    # vykresleni micku
     for micek in micky:
         # TO DO
         pass
@@ -243,7 +313,6 @@ pygame.display.set_caption(titulek_okna)
 ################################################################################
 
 while True:
-    # spusteni pomocnych podprogramu
     zpracovani_udalosti()
     pohyb_objektu()
     vykreslovaci_operace()
