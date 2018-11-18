@@ -110,6 +110,7 @@ class Pohyblivy_predmet(Predmet):
         
         self.hranice_prostredi = {'min': Vektor(xy_min.x, xy_min.y),
                                   'max': Vektor(xy_max.x, xy_max.y)}
+        
         self.okraje_predmetu = {'min': Vektor(-rozmer.x / 2, -rozmer.y / 2),
                                 'max': Vektor(rozmer.x / 2, rozmer.y / 2)}
     
@@ -250,20 +251,23 @@ class Palka(Pohyblivy_predmet):
 
 class Micek(Pohyblivy_predmet):
     def __init__(self, velikost, pozice_x, pozice_y, rychlost, uhel, okno, barva):
-        super().__init__(Vektor(velikost, velikost), Vektor(pozice_x, pozice_y), Vektor(rychlost * math.cos(uhel), rychlost * math.sin(uhel)), Vektor(0, 0), okno.rozliseni)
+        super().__init__(Vektor(velikost, velikost), Vektor(pozice_x, pozice_y), Vektor(rychlost * math.cos(uhel), rychlost * math.sin(uhel)), Vektor(0, 0), Vektor(okno.rozliseni.x, okno.rozliseni.y))
         
         okno.objekty.append(self)
         self.okno = okno
         self.barva = barva
+        self.puvodni_barva = barva
         
         self.klavesa_cervene = pygame.K_r
         self.klavesa_zelene = pygame.K_g
         self.klavesa_modre = pygame.K_b
+        self.klavesa_resetu = pygame.K_SPACE
         self.klavesy_modifikatoru = [pygame.K_LSHIFT, pygame.K_RSHIFT]
         
         self.cervena_aktivni = False
         self.zelena_aktivni = False
         self.modra_aktivni = False
+        self.reset_aktivni = False
         self.modifikator_aktivni = False
         
         x = self.pozice.x
@@ -282,6 +286,8 @@ class Micek(Pohyblivy_predmet):
                     self.zelena_aktivni = True
                 if udalost.key == self.klavesa_modre:
                     self.modra_aktivni = True
+                if udalost.key == self.klavesa_resetu:
+                    self.reset_aktivni = True
                 if udalost.key in self.klavesy_modifikatoru:
                     self.modifikator_aktivni = True
             
@@ -292,6 +298,8 @@ class Micek(Pohyblivy_predmet):
                     self.zelena_aktivni = False
                 if udalost.key == self.klavesa_modre:
                     self.modra_aktivni = False
+                if udalost.key == self.klavesa_resetu:
+                    self.reset_aktivni = False
                 if udalost.key in self.klavesy_modifikatoru:
                     self.modifikator_aktivni = False
         
@@ -300,6 +308,7 @@ class Micek(Pohyblivy_predmet):
         b = self.modra_aktivni
         m = self.modifikator_aktivni
         
+        # prebarveni micku
         if r and not m:
             self.barva = (self.barva[0] + 1, self.barva[1], self.barva[2])
         if g and not m:
@@ -313,6 +322,7 @@ class Micek(Pohyblivy_predmet):
         if b and m:
             self.barva = (self.barva[0], self.barva[1], self.barva[2] - 1)
         
+        # ochrana pred pretecenim z rozsahu 0-255
         if self.barva[0] < 0:
             self.barva = (0, self.barva[1], self.barva[2])
         if self.barva[1] < 0:
@@ -325,6 +335,10 @@ class Micek(Pohyblivy_predmet):
             self.barva = (self.barva[0], 255, self.barva[2])
         if self.barva[2] > 255:
             self.barva = (self.barva[0], self.barva[1], 255)
+        
+        # pripadne obnoveni puvodni barvy micku
+        if self.reset_aktivni:
+            self.barva = self.puvodni_barva
     
     def pohnout(self):
         # posunuti stredu micku
@@ -400,7 +414,7 @@ for i in range(100):
 ################################################################################
 
 def zpracovani_udalosti():
-    global okno, palky
+    global okno, palky, micky
     
     udalosti = pygame.event.get()
     
