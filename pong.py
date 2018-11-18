@@ -76,9 +76,12 @@ class Okno:
                     pygame.quit()
                     # aplikace skonci
                     sys.exit()
+    
+    def vykreslit(self):
+        self.displej.fill(self.barva_pozadi)
 
 ################################################################################
-# Objektova reprezentace hierarchie trid pro praci s predmety ve scene
+# Objektova reprezentace predmetu ve scene
 ################################################################################
 
 class Predmet:
@@ -95,16 +98,22 @@ class Predmet:
     def skalovat(self, faktor):
         self.rozmer.nasobit(faktor)
 
+################################################################################
+# Objektova reprezentace pohybliveho predmetu ve scene
+################################################################################
+
 class Pohyblivy_predmet(Predmet):
     def __init__(self, rozmer, pozice, rychlost, xy_min, xy_max):
         super().__init__(rozmer, pozice)
+        
         self.rychlost = Vektor(rychlost.x, rychlost.y)
+        
         self.hranice_prostredi = {'min': Vektor(xy_min.x, xy_min.y),
                                   'max': Vektor(xy_max.x, xy_max.y)}
         self.okraje_predmetu = {'min': Vektor(-rozmer.x / 2, -rozmer.y / 2),
                                 'max': Vektor(rozmer.x / 2, rozmer.y / 2)}
     
-    def pohnout(self, zastavit):
+    def pohnout(self, pri_kolizi_zastavit):
         self.posunout(self.rychlost)
         
         x = self.pozice.x
@@ -142,7 +151,7 @@ class Pohyblivy_predmet(Predmet):
             self.rychlost.y *= -1
             nastala_kolize = True
         
-        if zastavit and nastala_kolize:
+        if nastala_kolize and pri_kolizi_zastavit:
             self.rychlost.nasobit(0)
 
 ################################################################################
@@ -328,43 +337,32 @@ for i in range(100):
 ################################################################################
 
 def zpracovani_udalosti():
-    # pouziva promenne definovane vyse
     global okno, palky
     
-    # seznam udalosti, na ktere lze reagovat
     udalosti = pygame.event.get()
     
-    # nejdrive zpracuje mozne reakce okno
     okno.vyhodnotit_reakce(udalosti)
     
-    # kazda palka si svoji reakci vyhodnoti sama
     for palka in palky:
         palka.vyhodnotit_reakce(udalosti)
 
 def pohyb_objektu():
-    # pouziva promenne definovane vyse
     global palky, micky
 
-    # kazda palka si svuj pohyb vyhodnoti sama
     for palka in palky:
         palka.pohnout()
     
-    # kazdy micek si svuj pohyb vyhodnoti sam
     for micek in micky:
         micek.pohnout()
     
 def vykreslovaci_operace():
-    # pouziva promenne definovane vyse
     global okno, palky, micky
     
-    # vyplneni okna barvou pozadi
-    okno.displej.fill(okno.barva_pozadi)
+    okno.vykreslit()
     
-    # vykresleni palek
     for palka in palky:
         palka.vykreslit(okno.displej)
     
-    # vykresleni micku
     for micek in micky:
         micek.vykreslit(okno.displej)
     
@@ -373,7 +371,6 @@ def vykreslovaci_operace():
 ################################################################################
 
 while True:
-    # spusteni pomocnych podprogramu
     zpracovani_udalosti()
     pohyb_objektu()
     vykreslovaci_operace()
