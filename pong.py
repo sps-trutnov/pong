@@ -256,12 +256,75 @@ class Micek(Pohyblivy_predmet):
         self.okno = okno
         self.barva = barva
         
+        self.klavesa_cervene = pygame.K_r
+        self.klavesa_zelene = pygame.K_g
+        self.klavesa_modre = pygame.K_b
+        self.klavesy_modifikatoru = [pygame.K_LSHIFT, pygame.K_RSHIFT]
+        
+        self.cervena_aktivni = False
+        self.zelena_aktivni = False
+        self.modra_aktivni = False
+        self.modifikator_aktivni = False
+        
         x = self.pozice.x
         y = self.pozice.y
         w = self.rozmer.x
         h = self.rozmer.y
         
         self.tvary = {'elipsa': Predmet(Vektor(w, h), Vektor(x - w / 2, y - h / 2))}
+    
+    def vyhodnotit_reakce(self, udalosti):
+        for udalost in udalosti:
+            if udalost.type == pygame.KEYDOWN:
+                if udalost.key == self.klavesa_cervene:
+                    self.cervena_aktivni = True
+                if udalost.key == self.klavesa_zelene:
+                    self.zelena_aktivni = True
+                if udalost.key == self.klavesa_modre:
+                    self.modra_aktivni = True
+                if udalost.key in self.klavesy_modifikatoru:
+                    self.modifikator_aktivni = True
+            
+            if udalost.type == pygame.KEYUP:
+                if udalost.key == self.klavesa_cervene:
+                    self.cervena_aktivni = False
+                if udalost.key == self.klavesa_zelene:
+                    self.zelena_aktivni = False
+                if udalost.key == self.klavesa_modre:
+                    self.modra_aktivni = False
+                if udalost.key in self.klavesy_modifikatoru:
+                    self.modifikator_aktivni = False
+        
+        r = self.cervena_aktivni
+        g = self.zelena_aktivni
+        b = self.modra_aktivni
+        m = self.modifikator_aktivni
+        
+        if r and not m:
+            self.barva = (self.barva[0] + 1, self.barva[1], self.barva[2])
+        if g and not m:
+            self.barva = (self.barva[0], self.barva[1] + 1, self.barva[2])
+        if b and not m:
+            self.barva = (self.barva[0], self.barva[1], self.barva[2] + 1)
+        if r and m:
+            self.barva = (self.barva[0] - 1, self.barva[1], self.barva[2])
+        if g and m:
+            self.barva = (self.barva[0], self.barva[1] - 1, self.barva[2])
+        if b and m:
+            self.barva = (self.barva[0], self.barva[1], self.barva[2] - 1)
+        
+        if self.barva[0] < 0:
+            self.barva = (0, self.barva[1], self.barva[2])
+        if self.barva[1] < 0:
+            self.barva = (self.barva[0], 0, self.barva[2])
+        if self.barva[2] < 0:
+            self.barva = (self.barva[0], self.barva[1], 0)
+        if self.barva[0] > 255:
+            self.barva = (255, self.barva[1], self.barva[2])
+        if self.barva[1] > 255:
+            self.barva = (self.barva[0], 255, self.barva[2])
+        if self.barva[2] > 255:
+            self.barva = (self.barva[0], self.barva[1], 255)
     
     def pohnout(self):
         # posunuti stredu micku
@@ -345,6 +408,9 @@ def zpracovani_udalosti():
     
     for palka in palky:
         palka.vyhodnotit_reakce(udalosti)
+    
+    for micek in micky:
+        micek.vyhodnotit_reakce(udalosti)
 
 def pohyb_objektu():
     global palky, micky
