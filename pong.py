@@ -324,7 +324,7 @@ for i in range(100):
     y_offset = random.randint(-200, +200)
     
     s = rychlost_micku * random.randint(5, 15) / 10
-    u = random.randint(0, 360)
+    u = random.randint(-60, +60) + random.choice((0, 180))
     
     r = random.randint(0, 255)
     g = random.randint(0, 255)
