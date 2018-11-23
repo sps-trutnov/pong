@@ -391,6 +391,7 @@ palky.append(Palka(sirka_palek, vyska_palek, offset_palek + sirka_palek / 2, okn
 palky.append(Palka(sirka_palek, vyska_palek, okno.rozliseni.x - offset_palek - sirka_palek / 2, okno.rozliseni.y / 2, rychlost_palek, pygame.K_UP, pygame.K_DOWN, okno, (0, 0, 0)))
 
 # vytvoreni micku
+necitlivost = 1000
 micky = []
 
 for i in range(100):
@@ -398,6 +399,7 @@ for i in range(100):
     
     x = (okno.rozliseni.x - velikost_micku) / 2
     y = (okno.rozliseni.y - velikost_micku) / 2
+    x_offset = random.randint(-200, +200)
     y_offset = random.randint(-200, +200)
     
     s = rychlost_micku * random.randint(5, 15) / 10
@@ -407,7 +409,8 @@ for i in range(100):
     g = random.randint(0, 255)
     b = random.randint(0, 255)
     
-    micky.append(Micek(v, x, y + y_offset, s, math.radians(u), okno, (r, g, b)))
+    micky.append(Micek(v, x + x_offset, y + y_offset, s, math.radians(u), okno, (r, g, b)))
+    micky[-1].elasticky = False
 
 ################################################################################
 # Pomocne podprogramy
@@ -427,13 +430,45 @@ def zpracovani_udalosti():
         micek.vyhodnotit_reakce(udalosti)
 
 def pohyb_objektu():
-    global palky, micky
+    global palky, micky, necitlivost
 
     for palka in palky:
         palka.pohnout()
     
     for micek in micky:
         micek.pohnout()
+    
+    # kolize mezi micky
+    if necitlivost > 0:
+        necitlivost -= 1
+        return
+    
+    for orientacni_micek in micky:
+        orientacni_micek.kolize = False
+        
+        for kolizni_micek in micky:
+            if orientacni_micek == kolizni_micek:
+                continue
+            elif not hasattr(kolizni_micek, 'kolize') or kolizni_micek.kolize == True:
+                continue
+            
+            x1 = orientacni_micek.pozice.x
+            y1 = orientacni_micek.pozice.y
+            x2 = kolizni_micek.pozice.x
+            y2 = kolizni_micek.pozice.y
+            
+            d1 = orientacni_micek.rozmer.x
+            d2 = kolizni_micek.rozmer.x
+
+            vzdalenost_micku = math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2))
+            kriticka_vzdalenost = (d1 + d2) / 2
+            
+            if vzdalenost_micku < kriticka_vzdalenost:
+                orientacni_micek.rychlost, kolizni_micek.rychlost = kolizni_micek.rychlost, orientacni_micek.rychlost
+                orientacni_micek.kolize = True
+        else:
+            if not orientacni_micek.kolize:
+                orientacni_micek.elasticky = True
     
 def vykreslovaci_operace():
     global okno, palky, micky
@@ -454,7 +489,7 @@ while True:
     zpracovani_udalosti()
     pohyb_objektu()
     vykreslovaci_operace()
-
+    
     # prekresleni okna
     pygame.display.update()
     
