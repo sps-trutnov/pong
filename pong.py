@@ -411,6 +411,7 @@ for i in range(100):
     
     micky.append(Micek(v, x + x_offset, y + y_offset, s, math.radians(u), okno, (r, g, b)))
     micky[-1].elasticky = False
+    micky[-1].kolidoval = False
 
 ################################################################################
 # Pomocne podprogramy
@@ -439,17 +440,11 @@ def pohyb_objektu():
         micek.pohnout()
     
     # kolize mezi micky
-    if necitlivost > 0:
-        necitlivost -= 1
-        return
-    
     for orientacni_micek in micky:
-        orientacni_micek.kolize = False
-        
         for kolizni_micek in micky:
-            if orientacni_micek == kolizni_micek:
+            if kolizni_micek == orientacni_micek:
                 continue
-            elif not hasattr(kolizni_micek, 'kolize') or kolizni_micek.kolize == True:
+            if kolizni_micek.kolidoval and kolizni_micek.elasticky:
                 continue
             
             x1 = orientacni_micek.pozice.x
@@ -463,12 +458,19 @@ def pohyb_objektu():
             vzdalenost_micku = math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2))
             kriticka_vzdalenost = (d1 + d2) / 2
             
-            if vzdalenost_micku < kriticka_vzdalenost:
-                orientacni_micek.rychlost, kolizni_micek.rychlost = kolizni_micek.rychlost, orientacni_micek.rychlost
-                orientacni_micek.kolize = True
+            if vzdalenost_micku <= kriticka_vzdalenost:
+                orientacni_micek.kolidoval = True
+                
+                if orientacni_micek.elasticky:
+                    # vzorec pro kolizi
+                    orientacni_micek.rychlost, kolizni_micek.rychlost = kolizni_micek.rychlost, orientacni_micek.rychlost
         else:
-            if not orientacni_micek.kolize:
+            if not orientacni_micek.kolidoval:
                 orientacni_micek.elasticky = True
+                orientacni_micek.barva = (0, 0, 0)
+    else:
+        for micek in micky:
+            micek.kolidoval = False
     
 def vykreslovaci_operace():
     global okno, palky, micky
