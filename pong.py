@@ -26,6 +26,9 @@ class Vektor:
     def velikost(self):
         return math.sqrt(self.x**2 + self.y**2)
     
+    def uhel(self):
+        return math.atan2(self.y, self.x)
+    
     def prepsat(self, vzor):
         self.x = vzor.x
         self.y = vzor.y
@@ -133,22 +136,22 @@ class Pohyblivy_predmet(Predmet):
         nastala_kolize = False
         
         if xh_min != None and xo_min + x < xh_min:
-            self.posunout(Vektor(xh_min - (xo_min + x), 0))
+            self.posunout(Vektor(2 * (xh_min - (xo_min + x)), 0))
             self.rychlost.x *= -1
             nastala_kolize = True
         
         if yh_min != None and yo_min + y < yh_min:
-            self.posunout(Vektor(0, yh_min - (yo_min + y)))
+            self.posunout(Vektor(0, 2 * (yh_min - (yo_min + y))))
             self.rychlost.y *= -1
             nastala_kolize = True
         
         if xh_max != None and xo_max + x > xh_max:
-            self.posunout(Vektor(xh_max - (xo_max + x), 0))
+            self.posunout(Vektor(2 * (xh_max - (xo_max + x)), 0))
             self.rychlost.x *= -1
             nastala_kolize = True
         
         if yh_max != None and yo_max + y > yh_max:
-            self.posunout(Vektor(0, yh_max - (yo_max + y)))
+            self.posunout(Vektor(0, 2 * (yh_max - (yo_max + y))))
             self.rychlost.y *= -1
             nastala_kolize = True
         
@@ -382,8 +385,8 @@ vyska_palek = 75
 rychlost_palek = 0.5
 offset_palek = 30
 
-velikost_micku = 30
-rychlost_micku = 0.6
+velikost_micku = 50
+rychlost_micku = 0.25
 
 # vytvoreni palek
 palky = []
@@ -394,7 +397,7 @@ palky.append(Palka(sirka_palek, vyska_palek, okno.rozliseni.x - offset_palek - s
 necitlivost = 1000
 micky = []
 
-for i in range(100):
+for i in range(10):
     v = velikost_micku
     
     x = (okno.rozliseni.x - velikost_micku) / 2
@@ -442,9 +445,14 @@ def pohyb_objektu():
     # kolize mezi micky
     for orientacni_micek in micky:
         for kolizni_micek in micky:
+            # micek se nemuze srazit sam se sebou, i kdyz sam sebou pronika
             if kolizni_micek == orientacni_micek:
                 continue
-            if kolizni_micek.kolidoval and kolizni_micek.elasticky:
+            # micek se nemuze srazit s necim, co dosud neni pripravene se srazet
+            if not kolizni_micek.elasticky:
+                continue
+            # micek se nebude srazet vicekrat nez jednou za frame (pozdeji odstranit)
+            if kolizni_micek.kolidoval:
                 continue
             
             x1 = orientacni_micek.pozice.x
@@ -459,16 +467,53 @@ def pohyb_objektu():
             kriticka_vzdalenost = (d1 + d2) / 2
             
             if vzdalenost_micku <= kriticka_vzdalenost:
+                # pri kolizi se zabranuje zrcadlove kolizi pred dokoncenim pruchodu pole
                 orientacni_micek.kolidoval = True
                 
-                if orientacni_micek.elasticky:
-                    # vzorec pro kolizi
-                    orientacni_micek.rychlost, kolizni_micek.rychlost = kolizni_micek.rychlost, orientacni_micek.rychlost
+                if orientacni_micek.elasticky and kolizni_micek.elasticky:
+                    # pri pruniku se preventivne zabranuje dalsimu srazeni
+                    orientacni_micek.elasticky = False
+                    orientacni_micek.barva = orientacni_micek.puvodni_barva
+                    kolizni_micek.elasticky = False
+                    kolizni_micek.barva = kolizni_micek.puvodni_barva
+                    
+                    # celkovy moment hybnosti pred kolizi
+                    old_momentum = 0
+                    
+                    for micek in micky:
+                        old_momentum += micek.rychlost.velikost()
+                    
+                    # vzorec pro kolizi (Wikipedie)
+                    old_v1 = Vektor(orientacni_micek.rychlost.x, orientacni_micek.rychlost.y)
+                    old_v2 = Vektor(kolizni_micek.rychlost.x, kolizni_micek.rychlost.y)
+                    
+                    phi_angle = Vektor(kolizni_micek.pozice.x - orientacni_micek.pozice.x, kolizni_micek.pozice.y - orientacni_micek.pozice.y).uhel()
+                    
+                    new_v1x = old_v2.velikost() * math.cos(old_v2.uhel() - phi_angle) * math.cos(phi_angle) + old_v1.velikost() * math.sin(old_v1.uhel() - phi_angle) * math.sin(phi_angle)
+                    new_v1y = old_v2.velikost() * math.cos(old_v2.uhel() - phi_angle) * math.sin(phi_angle) + old_v1.velikost() * math.sin(old_v1.uhel() - phi_angle) * math.cos(phi_angle)
+                    
+                    new_v2x = old_v1.velikost() * math.cos(old_v1.uhel() - phi_angle) * math.cos(phi_angle) + old_v2.velikost() * math.sin(old_v2.uhel() - phi_angle) * math.sin(phi_angle)
+                    new_v2y = old_v1.velikost() * math.cos(old_v1.uhel() - phi_angle) * math.sin(phi_angle) + old_v2.velikost() * math.sin(old_v2.uhel() - phi_angle) * math.cos(phi_angle)
+                    
+                    orientacni_micek.rychlost = Vektor(new_v1x, new_v1y)
+                    kolizni_micek.rychlost = Vektor(new_v2x, new_v2y)
+                    
+                    # celkovy moment hybnosti po kolizi
+                    new_momentum = 0
+                    
+                    for micek in micky:
+                        new_momentum += micek.rychlost.velikost()
+                    
+                    # casto se stane, ze pred a po kolizi se celkovy moment hybnosti lisi (PROC???)
+                    if new_momentum > old_momentum + 0.001 or new_momentum < old_momentum - 0.001:
+                        print(round(old_momentum, 3), round(new_momentum, 3))
         else:
-            if not orientacni_micek.kolidoval:
+            # pokud s nicim behem tohoto framu nekolidoval
+            if not orientacni_micek.kolidoval and not orientacni_micek.elasticky:
                 orientacni_micek.elasticky = True
                 orientacni_micek.barva = (0, 0, 0)
     else:
+        # reset priznaku kolizi pro novy frame
         for micek in micky:
             micek.kolidoval = False
     
