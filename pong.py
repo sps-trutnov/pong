@@ -382,11 +382,11 @@ okno.displej = pygame.display.set_mode((okno.rozliseni.x, okno.rozliseni.y))
 # nastaveni parametru hry
 sirka_palek = 15
 vyska_palek = 75
-rychlost_palek = 0.5
+rychlost_palek = 0.25
 offset_palek = 30
 
 velikost_micku = 50
-rychlost_micku = 0.15
+rychlost_micku = 0.25
 
 # vytvoreni palek
 palky = []
@@ -397,16 +397,16 @@ palky.append(Palka(okno, Vektor(sirka_palek, vyska_palek), Vektor(okno.rozliseni
 necitlivost = 1000
 micky = []
 
-for i in range(2):
+for i in range(25):
     v = velikost_micku
     
     x = (okno.rozliseni.x - velikost_micku) / 2
     y = (okno.rozliseni.y - velikost_micku) / 2
-    x_offset = (-1)**(i + 1) * 100 + 50#random.randint(-200, +200)
-    y_offset = 200#random.randint(-200, +200)
+    x_offset = random.randint(-100, +100)
+    y_offset = random.randint(-100, +100)
     
-    s = rychlost_micku *random.randint(8, 12) / 10#* random.randint(5, 15) / 10
-    u = (-1)**(i + 1) * -45 + 270#random.randint(-60, +60) + random.choice((0, 180))
+    s = rychlost_micku * random.randint(5, 15) / 10
+    u = random.randint(-60, +60) + random.choice((0, 180))
     
     r = random.randint(0, 255)
     g = random.randint(0, 255)
@@ -452,7 +452,7 @@ def pohyb_objektu():
             if not kolizni_micek.elasticky:
                 continue
             # micek se nebude srazet vicekrat nez jednou za frame (pozdeji odstranit)
-            if orientacni_micek.kolidoval or kolizni_micek.kolidoval:
+            if kolizni_micek.kolidoval:
                 continue
             
             x1 = orientacni_micek.pozice.x
@@ -475,13 +475,13 @@ def pohyb_objektu():
                     orientacni_micek.elasticky = False
                     kolizni_micek.elasticky = False
                     # neelasticke micky se indikuji jinou barvou
-                    orientacni_micek.barva = orientacni_micek.puvodni_barva
-                    kolizni_micek.barva = kolizni_micek.puvodni_barva
+                    orientacni_micek.barva = (100, 100, 100)
+                    kolizni_micek.barva = (100, 100, 100)
                     # micky se pri kolizi zastavi
                     #orientacni_micek.rychlost = Vektor(0, 0)
                     #kolizni_micek.rychlost = Vektor(0, 0)
                     
-                    # celkovy moment hybnosti pred kolizi
+                    # hybnost paru pred kolizi
                     old_momentum = orientacni_micek.rychlost.velikost() + kolizni_micek.rychlost.velikost()
                     
                     # vzorec pro kolizi (Wikipedie)
@@ -493,21 +493,23 @@ def pohyb_objektu():
                     new_v1x = old_v2.velikost() * math.cos(old_v2.uhel() - phi_angle) * math.cos(phi_angle) + old_v1.velikost() * math.sin(old_v1.uhel() - phi_angle) * math.sin(-phi_angle)
                     new_v1y = old_v2.velikost() * math.cos(old_v2.uhel() - phi_angle) * math.sin(phi_angle) + old_v1.velikost() * math.sin(old_v1.uhel() - phi_angle) * math.cos(-phi_angle)
                     
-                    # ma se uhel kolize prepocitat vzhledem k opacnemu micku, nebo ne?
-                    #phi_angle = Vektor(orientacni_micek.pozice.x - kolizni_micek.pozice.x, orientacni_micek.pozice.y - kolizni_micek.pozice.y).uhel()
-                    
                     new_v2x = old_v1.velikost() * math.cos(old_v1.uhel() - phi_angle) * math.cos(phi_angle) + old_v2.velikost() * math.sin(old_v2.uhel() - phi_angle) * math.sin(-phi_angle)
                     new_v2y = old_v1.velikost() * math.cos(old_v1.uhel() - phi_angle) * math.sin(phi_angle) + old_v2.velikost() * math.sin(old_v2.uhel() - phi_angle) * math.cos(-phi_angle)
                     
                     orientacni_micek.rychlost = Vektor(new_v1x, new_v1y)
                     kolizni_micek.rychlost = Vektor(new_v2x, new_v2y)
                     
-                    # celkovy moment hybnosti po kolizi
+                    # hybnost paru po kolizi
                     new_momentum = orientacni_micek.rychlost.velikost() + kolizni_micek.rychlost.velikost()
                     
-                    # casto se stane, ze pred a po kolizi se celkovy moment hybnosti lisi (PROC???)
-                    if new_momentum > old_momentum + 0.001 or new_momentum < old_momentum - 0.001:
-                        print(round(old_momentum, 3), round(new_momentum, 3))
+                    # korekce hybnosti
+                    korekce = old_momentum / new_momentum
+                    
+                    orientacni_micek.rychlost.x *= korekce
+                    orientacni_micek.rychlost.y *= korekce
+
+                    kolizni_micek.rychlost.x *= korekce
+                    kolizni_micek.rychlost.y *= korekce
         else:
             # pokud s nicim behem tohoto framu nekolidoval
             if not orientacni_micek.kolidoval and not orientacni_micek.elasticky:
