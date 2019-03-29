@@ -1,6 +1,6 @@
-################################################################################
-# GRAFICKA HRA PONG
-################################################################################
+# ------------------------------------------------------------------------------
+# GRAFICKA HRA PONG © 2018-2019 Jakub Senkyr
+# ------------------------------------------------------------------------------
 
 # importovani knihovny pro praci s grafikou
 import pygame
@@ -14,9 +14,9 @@ import sys
 from pygame.locals import *
 from pygame.event import *
 
-################################################################################
+# ------------------------------------------------------------------------------
 # Objektova reprezentace dvourozmerneho vektoru
-################################################################################
+# ------------------------------------------------------------------------------
 
 class Vektor:
     def __init__(self, x, y):
@@ -48,9 +48,9 @@ class Vektor:
         self.x = math.cos(self.uhel) * velikost
         self.y = math.sin(self.uhel) * velikost
 
-################################################################################
+# ------------------------------------------------------------------------------
 # Objektova reprezentace vykreslovaciho okna
-################################################################################
+# ------------------------------------------------------------------------------
 
 class Okno:
     def __init__(self, titulek, rozliseni, barva_pozadi):
@@ -83,9 +83,9 @@ class Okno:
     def vykreslit(self):
         self.displej.fill(self.barva_pozadi)
 
-################################################################################
+# ------------------------------------------------------------------------------
 # Objektova reprezentace predmetu ve scene
-################################################################################
+# ------------------------------------------------------------------------------
 
 class Predmet:
     def __init__(self, rozmer, pozice):
@@ -101,18 +101,18 @@ class Predmet:
     def skalovat(self, faktor):
         self.rozmer.nasobit(faktor)
 
-################################################################################
+# ------------------------------------------------------------------------------
 # Objektova reprezentace pohybliveho predmetu ve scene
-################################################################################
+# ------------------------------------------------------------------------------
 
 class Pohyblivy_predmet(Predmet):
-    def __init__(self, rozmer, pozice, rychlost, xy_min, xy_max):
+    def __init__(self, okno, rozmer, pozice, rychlost):
         super().__init__(rozmer, pozice)
         
         self.rychlost = Vektor(rychlost.x, rychlost.y)
         
-        self.hranice_prostredi = {'min': Vektor(xy_min.x, xy_min.y),
-                                  'max': Vektor(xy_max.x, xy_max.y)}
+        self.okraje_okna = {'min': Vektor(0, 0),
+                            'max': Vektor(okno.rozliseni.x, okno.rozliseni.y)}
         
         self.okraje_predmetu = {'min': Vektor(-rozmer.x / 2, -rozmer.y / 2),
                                 'max': Vektor(rozmer.x / 2, rozmer.y / 2)}
@@ -123,50 +123,50 @@ class Pohyblivy_predmet(Predmet):
         x = self.pozice.x
         y = self.pozice.y
         
-        xo_min = self.okraje_predmetu['min'].x
-        yo_min = self.okraje_predmetu['min'].y
-        xo_max = self.okraje_predmetu['max'].x
-        yo_max = self.okraje_predmetu['max'].y
+        xp_min = self.okraje_predmetu['min'].x
+        yp_min = self.okraje_predmetu['min'].y
+        xp_max = self.okraje_predmetu['max'].x
+        yp_max = self.okraje_predmetu['max'].y
         
-        xh_min = self.hranice_prostredi['min'].x
-        yh_min = self.hranice_prostredi['min'].y
-        xh_max = self.hranice_prostredi['max'].x
-        yh_max = self.hranice_prostredi['max'].y
+        xo_min = self.okraje_okna['min'].x
+        yo_min = self.okraje_okna['min'].y
+        xo_max = self.okraje_okna['max'].x
+        yo_max = self.okraje_okna['max'].y
         
         nastala_kolize = False
         
-        if xh_min != None and xo_min + x < xh_min:
-            self.posunout(Vektor(2 * (xh_min - (xo_min + x)), 0))
+        if xo_min != None and xp_min + x < xo_min:
+            #self.posunout(Vektor(2 * (xo_min - (xp_min + x)), 0))
             self.rychlost.x *= -1
             nastala_kolize = True
         
-        if yh_min != None and yo_min + y < yh_min:
-            self.posunout(Vektor(0, 2 * (yh_min - (yo_min + y))))
+        if yo_min != None and yp_min + y < yo_min:
+            #self.posunout(Vektor(0, 2 * (yo_min - (yp_min + y))))
             self.rychlost.y *= -1
             nastala_kolize = True
         
-        if xh_max != None and xo_max + x > xh_max:
-            self.posunout(Vektor(2 * (xh_max - (xo_max + x)), 0))
+        if xo_max != None and xp_max + x > xo_max:
+            #self.posunout(Vektor(2 * (xo_max - (xp_max + x)), 0))
             self.rychlost.x *= -1
             nastala_kolize = True
         
-        if yh_max != None and yo_max + y > yh_max:
-            self.posunout(Vektor(0, 2 * (yh_max - (yo_max + y))))
+        if yo_max != None and yp_max + y > yo_max:
+            #self.posunout(Vektor(0, 2 * (yo_max - (yp_max + y))))
             self.rychlost.y *= -1
             nastala_kolize = True
         
         if nastala_kolize and pri_kolizi_zastavit:
             self.rychlost.nasobit(0)
 
-################################################################################
+# ------------------------------------------------------------------------------
 # Objektova reprezentace hracovy palky
-################################################################################
+# ------------------------------------------------------------------------------
 
 class Palka(Pohyblivy_predmet):
-    def __init__(self, sirka, vyska, pozice_x, pozice_y, rychlost, klavesa_nahoru, klavesa_dolu, okno, barva):
-        super().__init__(Vektor(sirka, vyska), Vektor(pozice_x, pozice_y), Vektor(0, 0), Vektor(0,0), okno.rozliseni)
+    def __init__(self, okno, rozmer, pozice, modul_rychlosti, klavesa_nahoru, klavesa_dolu, barva):
+        super().__init__(okno, Vektor(rozmer.x, rozmer.y), Vektor(pozice.x, pozice.y), Vektor(0, 0))
         
-        self.max_rychlost = rychlost
+        self.modul_rychlosti = modul_rychlosti
         
         okno.objekty.append(self)
         self.okno = okno
@@ -183,9 +183,9 @@ class Palka(Pohyblivy_predmet):
         w = self.rozmer.x
         h = self.rozmer.y
         
-        self.tvary = {'obdelnik': Predmet(Vektor(w, h - w), Vektor(x - w / 2, y - (h - w) / 2)),
-                      'horni_elipsa': Predmet(Vektor(w, w), Vektor(x - w / 2, y - h / 2)),
-                      'spodni_elipsa': Predmet(Vektor(w, w), Vektor(x - w / 2, y + h / 2 - w))}
+        self.tvary = {'obdelnik': Predmet(Vektor(w, h - w), Vektor(x - w / 2, y + (h - w) / 2)),
+                      'horni_elipsa': Predmet(Vektor(w, w), Vektor(x - w / 2, y + h / 2)),
+                      'spodni_elipsa': Predmet(Vektor(w, w), Vektor(x - w / 2, y - h / 2 + w))}
         
     def vyhodnotit_reakce(self, udalosti):
         # zpracovani udalosti
@@ -209,10 +209,10 @@ class Palka(Pohyblivy_predmet):
         self.rychlost = Vektor(0, 0)
         
         if self.pohyb_dolu:
-            self.rychlost.secist(Vektor(0, self.max_rychlost))
+            self.rychlost.secist(Vektor(0, -self.modul_rychlosti))
         
         if self.pohyb_nahoru:
-            self.rychlost.secist(Vektor(0, -self.max_rychlost))
+            self.rychlost.secist(Vektor(0, self.modul_rychlosti))
         
         # posunuti stredu palky
         super().pohnout(True)
@@ -223,9 +223,9 @@ class Palka(Pohyblivy_predmet):
         w = self.rozmer.x
         h = self.rozmer.y
         
-        self.tvary['obdelnik'].presunout(Vektor(x - w / 2, y - (h - w) / 2))
-        self.tvary['horni_elipsa'].presunout(Vektor(x - w / 2, y - h / 2))
-        self.tvary['spodni_elipsa'].presunout(Vektor(x - w / 2, y + h / 2 - w))
+        self.tvary['obdelnik'].presunout(Vektor(x - w / 2, y + (h - w) / 2))
+        self.tvary['horni_elipsa'].presunout(Vektor(x - w / 2, y + h / 2))
+        self.tvary['spodni_elipsa'].presunout(Vektor(x - w / 2, y - h / 2 + w))
 
     def vykreslit(self, cil):
         barva = self.barva
@@ -234,27 +234,27 @@ class Palka(Pohyblivy_predmet):
         y = self.tvary['obdelnik'].pozice.y
         w = self.tvary['obdelnik'].rozmer.x
         h = self.tvary['obdelnik'].rozmer.y
-        pygame.draw.rect(cil, barva, (x, y, w, h))
+        pygame.draw.rect(cil, barva, (x, self.okraje_okna['max'].y - y, w, h))
         
         x = self.tvary['horni_elipsa'].pozice.x
         y = self.tvary['horni_elipsa'].pozice.y
         w = self.tvary['horni_elipsa'].rozmer.x
         h = self.tvary['horni_elipsa'].rozmer.y
-        pygame.draw.ellipse(cil, barva, (x, y, w, h))
+        pygame.draw.ellipse(cil, barva, (x, self.okraje_okna['max'].y - y, w, h))
         
         x = self.tvary['spodni_elipsa'].pozice.x
         y = self.tvary['spodni_elipsa'].pozice.y
         w = self.tvary['spodni_elipsa'].rozmer.x
         h = self.tvary['spodni_elipsa'].rozmer.y
-        pygame.draw.ellipse(cil, barva, (x, y, w, h))
+        pygame.draw.ellipse(cil, barva, (x, self.okraje_okna['max'].y - y, w, h))
 
-################################################################################
+# ------------------------------------------------------------------------------
 # Objektova reprezentace hraciho micku
-################################################################################
+# ------------------------------------------------------------------------------
 
 class Micek(Pohyblivy_predmet):
-    def __init__(self, velikost, pozice_x, pozice_y, rychlost, uhel, okno, barva):
-        super().__init__(Vektor(velikost, velikost), Vektor(pozice_x, pozice_y), Vektor(rychlost * math.cos(uhel), rychlost * math.sin(uhel)), Vektor(0, 0), Vektor(okno.rozliseni.x, okno.rozliseni.y))
+    def __init__(self, okno, velikost, pozice, modul_rychlosti, uhel_rychlosti, barva):
+        super().__init__(okno, Vektor(velikost, velikost), Vektor(pozice.x, pozice.y), Vektor(modul_rychlosti * math.cos(uhel_rychlosti), modul_rychlosti * math.sin(uhel_rychlosti)))
         
         okno.objekty.append(self)
         self.okno = okno
@@ -278,7 +278,7 @@ class Micek(Pohyblivy_predmet):
         w = self.rozmer.x
         h = self.rozmer.y
         
-        self.tvary = {'elipsa': Predmet(Vektor(w, h), Vektor(x - w / 2, y - h / 2))}
+        self.tvary = {'elipsa': Predmet(Vektor(w, h), Vektor(x - w / 2, y + h / 2))}
     
     def vyhodnotit_reakce(self, udalosti):
         for udalost in udalosti:
@@ -353,7 +353,7 @@ class Micek(Pohyblivy_predmet):
         w = self.rozmer.x
         h = self.rozmer.y
         
-        self.tvary['elipsa'].presunout(Vektor(x - w / 2, y - h / 2))
+        self.tvary['elipsa'].presunout(Vektor(x - w / 2, y + h / 2))
     
     def vykreslit(self, cil):
         barva = self.barva
@@ -363,11 +363,11 @@ class Micek(Pohyblivy_predmet):
         w = self.tvary['elipsa'].rozmer.x
         h = self.tvary['elipsa'].rozmer.y
         
-        pygame.draw.ellipse(cil, barva, (x, y, w, h))
+        pygame.draw.ellipse(cil, barva, (x, self.okraje_okna['max'].y - y, w, h))
 
-################################################################################
+# ------------------------------------------------------------------------------
 # Inicializace
-################################################################################
+# ------------------------------------------------------------------------------
 
 # inicializace knihovny Pygame
 pygame.init()
@@ -386,39 +386,39 @@ rychlost_palek = 0.5
 offset_palek = 30
 
 velikost_micku = 50
-rychlost_micku = 0.25
+rychlost_micku = 0.15
 
 # vytvoreni palek
 palky = []
-palky.append(Palka(sirka_palek, vyska_palek, offset_palek + sirka_palek / 2, okno.rozliseni.y / 2, rychlost_palek, pygame.K_w, pygame.K_s, okno, (0, 0, 0)))
-palky.append(Palka(sirka_palek, vyska_palek, okno.rozliseni.x - offset_palek - sirka_palek / 2, okno.rozliseni.y / 2, rychlost_palek, pygame.K_UP, pygame.K_DOWN, okno, (0, 0, 0)))
+palky.append(Palka(okno, Vektor(sirka_palek, vyska_palek), Vektor(offset_palek + sirka_palek / 2, okno.rozliseni.y / 2), rychlost_palek, pygame.K_w, pygame.K_s, (0, 0, 0)))
+palky.append(Palka(okno, Vektor(sirka_palek, vyska_palek), Vektor(okno.rozliseni.x - offset_palek - sirka_palek / 2, okno.rozliseni.y / 2), rychlost_palek, pygame.K_UP, pygame.K_DOWN, (0, 0, 0)))
 
 # vytvoreni micku
 necitlivost = 1000
 micky = []
 
-for i in range(10):
+for i in range(2):
     v = velikost_micku
     
     x = (okno.rozliseni.x - velikost_micku) / 2
     y = (okno.rozliseni.y - velikost_micku) / 2
-    x_offset = random.randint(-200, +200)
-    y_offset = random.randint(-200, +200)
+    x_offset = (-1)**(i + 1) * 100 + 50#random.randint(-200, +200)
+    y_offset = 200#random.randint(-200, +200)
     
-    s = rychlost_micku * random.randint(5, 15) / 10
-    u = random.randint(-60, +60) + random.choice((0, 180))
+    s = rychlost_micku *random.randint(8, 12) / 10#* random.randint(5, 15) / 10
+    u = (-1)**(i + 1) * -45 + 270#random.randint(-60, +60) + random.choice((0, 180))
     
     r = random.randint(0, 255)
     g = random.randint(0, 255)
     b = random.randint(0, 255)
     
-    micky.append(Micek(v, x + x_offset, y + y_offset, s, math.radians(u), okno, (r, g, b)))
+    micky.append(Micek(okno, v, Vektor(x + x_offset, y + y_offset), s, math.radians(u), (r, g, b)))
     micky[-1].elasticky = False
     micky[-1].kolidoval = False
 
-################################################################################
+# ------------------------------------------------------------------------------
 # Pomocne podprogramy
-################################################################################
+# ------------------------------------------------------------------------------
 
 def zpracovani_udalosti():
     global okno, palky, micky
@@ -452,7 +452,7 @@ def pohyb_objektu():
             if not kolizni_micek.elasticky:
                 continue
             # micek se nebude srazet vicekrat nez jednou za frame (pozdeji odstranit)
-            if kolizni_micek.kolidoval:
+            if orientacni_micek.kolidoval or kolizni_micek.kolidoval:
                 continue
             
             x1 = orientacni_micek.pozice.x
@@ -466,22 +466,23 @@ def pohyb_objektu():
             vzdalenost_micku = math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2))
             kriticka_vzdalenost = (d1 + d2) / 2
             
-            if vzdalenost_micku <= kriticka_vzdalenost:
+            if vzdalenost_micku < kriticka_vzdalenost:
                 # pri kolizi se zabranuje zrcadlove kolizi pred dokoncenim pruchodu pole
                 orientacni_micek.kolidoval = True
                 
                 if orientacni_micek.elasticky and kolizni_micek.elasticky:
                     # pri pruniku se preventivne zabranuje dalsimu srazeni
                     orientacni_micek.elasticky = False
-                    orientacni_micek.barva = orientacni_micek.puvodni_barva
                     kolizni_micek.elasticky = False
+                    # neelasticke micky se indikuji jinou barvou
+                    orientacni_micek.barva = orientacni_micek.puvodni_barva
                     kolizni_micek.barva = kolizni_micek.puvodni_barva
+                    # micky se pri kolizi zastavi
+                    #orientacni_micek.rychlost = Vektor(0, 0)
+                    #kolizni_micek.rychlost = Vektor(0, 0)
                     
                     # celkovy moment hybnosti pred kolizi
-                    old_momentum = 0
-                    
-                    for micek in micky:
-                        old_momentum += micek.rychlost.velikost()
+                    old_momentum = orientacni_micek.rychlost.velikost() + kolizni_micek.rychlost.velikost()
                     
                     # vzorec pro kolizi (Wikipedie)
                     old_v1 = Vektor(orientacni_micek.rychlost.x, orientacni_micek.rychlost.y)
@@ -489,20 +490,20 @@ def pohyb_objektu():
                     
                     phi_angle = Vektor(kolizni_micek.pozice.x - orientacni_micek.pozice.x, kolizni_micek.pozice.y - orientacni_micek.pozice.y).uhel()
                     
-                    new_v1x = old_v2.velikost() * math.cos(old_v2.uhel() - phi_angle) * math.cos(phi_angle) + old_v1.velikost() * math.sin(old_v1.uhel() - phi_angle) * math.sin(phi_angle)
-                    new_v1y = old_v2.velikost() * math.cos(old_v2.uhel() - phi_angle) * math.sin(phi_angle) + old_v1.velikost() * math.sin(old_v1.uhel() - phi_angle) * math.cos(phi_angle)
+                    new_v1x = old_v2.velikost() * math.cos(old_v2.uhel() - phi_angle) * math.cos(phi_angle) + old_v1.velikost() * math.sin(old_v1.uhel() - phi_angle) * math.sin(-phi_angle)
+                    new_v1y = old_v2.velikost() * math.cos(old_v2.uhel() - phi_angle) * math.sin(phi_angle) + old_v1.velikost() * math.sin(old_v1.uhel() - phi_angle) * math.cos(-phi_angle)
                     
-                    new_v2x = old_v1.velikost() * math.cos(old_v1.uhel() - phi_angle) * math.cos(phi_angle) + old_v2.velikost() * math.sin(old_v2.uhel() - phi_angle) * math.sin(phi_angle)
-                    new_v2y = old_v1.velikost() * math.cos(old_v1.uhel() - phi_angle) * math.sin(phi_angle) + old_v2.velikost() * math.sin(old_v2.uhel() - phi_angle) * math.cos(phi_angle)
+                    # ma se uhel kolize prepocitat vzhledem k opacnemu micku, nebo ne?
+                    #phi_angle = Vektor(orientacni_micek.pozice.x - kolizni_micek.pozice.x, orientacni_micek.pozice.y - kolizni_micek.pozice.y).uhel()
+                    
+                    new_v2x = old_v1.velikost() * math.cos(old_v1.uhel() - phi_angle) * math.cos(phi_angle) + old_v2.velikost() * math.sin(old_v2.uhel() - phi_angle) * math.sin(-phi_angle)
+                    new_v2y = old_v1.velikost() * math.cos(old_v1.uhel() - phi_angle) * math.sin(phi_angle) + old_v2.velikost() * math.sin(old_v2.uhel() - phi_angle) * math.cos(-phi_angle)
                     
                     orientacni_micek.rychlost = Vektor(new_v1x, new_v1y)
                     kolizni_micek.rychlost = Vektor(new_v2x, new_v2y)
                     
                     # celkovy moment hybnosti po kolizi
-                    new_momentum = 0
-                    
-                    for micek in micky:
-                        new_momentum += micek.rychlost.velikost()
+                    new_momentum = orientacni_micek.rychlost.velikost() + kolizni_micek.rychlost.velikost()
                     
                     # casto se stane, ze pred a po kolizi se celkovy moment hybnosti lisi (PROC???)
                     if new_momentum > old_momentum + 0.001 or new_momentum < old_momentum - 0.001:
@@ -527,10 +528,10 @@ def vykreslovaci_operace():
     
     for micek in micky:
         micek.vykreslit(okno.displej)
-    
-################################################################################
+
+# ------------------------------------------------------------------------------
 # Nekonecna vykreslovaci smycka
-################################################################################
+# ------------------------------------------------------------------------------
 
 while True:
     zpracovani_udalosti()
